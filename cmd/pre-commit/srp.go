@@ -252,8 +252,16 @@ func (c *SRPChecker) validateSRPCompliance(analysis *SRPAnalysis, filePath strin
 		violations = append(violations, c.checkMixedConcerns(analysis, filePath)...)
 	}
 
-	// Apply warnOnly overrides — but ErrorPaths and ErrorScopes keep their severity.
+	// Severity resolution precedence (highest priority first):
+	//   1. WarningOnlyPaths — exemption, force "warning"
+	//   2. ErrorPaths       — keep original severity (typically error)
+	//   3. ErrorScopes      — keep original severity for new/changed files
+	//   4. WarnOnly         — downgrade to "warning" when rule is listed
 	for i := range violations {
+		if c.config.isWarningOnlyPath(violations[i].File) {
+			violations[i].Severity = "warning"
+			continue
+		}
 		if c.config.isErrorPath(violations[i].File) {
 			continue
 		}
@@ -589,24 +597,20 @@ func (c *SRPChecker) checkTestRequired(files []string) []SRPViolation {
 					suggestedTest = base + ".test" + ext
 				}
 
-				// Per-profile severity wins over the global warnOnly list. This
-				// lets one app (e.g. apps/mobile) error on missing tests while
-				// other apps (e.g. apps/web) only warn — set Severity explicitly
-				// per profile. If the field is omitted, fall back to the global
-				// warnOnly behaviour ("error" → "warning" when in WarnOnly).
-				// ErrorPaths and ErrorScopes both trump WarnOnly: a file under
-				// an error path, or matching a configured change scope, stays
-				// at error severity.
+				// Severity resolution for testRequired:
+				//   1. WarningOnlyPaths — exemption, always wins
+				//   2. cfg.Severity     — explicit per-profile setting
+				//   3. WarnOnly + scope/path — fall back to global rules
 				var severity string
-				switch cfg.Severity {
-				case "error", "warning":
+				switch {
+				case c.config.isWarningOnlyPath(file):
+					severity = "warning"
+				case cfg.Severity == "error" || cfg.Severity == "warning":
 					severity = cfg.Severity
+				case c.config.isWarnOnly("testRequired") && !c.config.isErrorPath(file) && !c.isInErrorScope(file):
+					severity = "warning"
 				default:
-					if c.config.isWarnOnly("testRequired") && !c.config.isErrorPath(file) && !c.isInErrorScope(file) {
-						severity = "warning"
-					} else {
-						severity = "error"
-					}
+					severity = "error"
 				}
 
 				violations = append(violations, SRPViolation{

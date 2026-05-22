@@ -643,8 +643,9 @@ func run() error {
 				changedFiles[f] = true
 			}
 
-			filterResult := filterFilesForSRPWithDetails(srpFiles, config.SRPConfig)
-			return runSRPCheckWithFilter(filterResult, config.SRPConfig, fullMode, newFiles, changedFiles)
+			srpCfg := config.SRPConfig.withStagedStrict(config.Features.SrpStrictOnStaged)
+			filterResult := filterFilesForSRPWithDetails(srpFiles, srpCfg)
+			return runSRPCheckWithFilter(filterResult, srpCfg, fullMode, newFiles, changedFiles)
 		})
 	}
 
@@ -1065,13 +1066,14 @@ func runSpecificCheck(name string, config *Config, files []string) error {
 	case "frontendStructure":
 		return runFrontendStructureCheck(config.Apps, files)
 	case "srp":
-		filterResult := filterFilesForSRPWithDetails(files, config.SRPConfig)
+		srpCfg := config.SRPConfig.withStagedStrict(config.Features.SrpStrictOnStaged)
+		filterResult := filterFilesForSRPWithDetails(files, srpCfg)
 		newFiles, _ := getNewlyAddedFiles()
 		changedFiles := make(map[string]bool, len(files))
 		for _, f := range files {
 			changedFiles[f] = true
 		}
-		return runSRPCheckWithFilter(filterResult, config.SRPConfig, true, newFiles, changedFiles)
+		return runSRPCheckWithFilter(filterResult, srpCfg, true, newFiles, changedFiles)
 	case "mockCheck":
 		return runMockCheck(files, config.MockCheck)
 	case "consoleCheck":
@@ -1193,7 +1195,8 @@ func runAllStandaloneChecks(config *Config, files []string) error {
 
 	// SRP check
 	if config.Features.SRP {
-		filterResult := filterFilesForSRPWithDetails(files, config.SRPConfig)
+		srpCfg := config.SRPConfig.withStagedStrict(config.Features.SrpStrictOnStaged)
+		filterResult := filterFilesForSRPWithDetails(files, srpCfg)
 		// In standalone mode there may be no git context; getNewlyAddedFiles
 		// returns an empty/nil map and errorScopes simply has no effect.
 		newFiles, _ := getNewlyAddedFiles()
@@ -1201,7 +1204,7 @@ func runAllStandaloneChecks(config *Config, files []string) error {
 		for _, f := range files {
 			changedFiles[f] = true
 		}
-		collectResult("srp", runSRPCheckWithFilter(filterResult, config.SRPConfig, true, newFiles, changedFiles))
+		collectResult("srp", runSRPCheckWithFilter(filterResult, srpCfg, true, newFiles, changedFiles))
 	}
 
 	// Mock check

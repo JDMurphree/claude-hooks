@@ -200,6 +200,13 @@ type Features struct {
 	FrontendStructure  bool `json:"frontendStructure"`
 	SRP                bool `json:"srp"`
 	FullSRPOnCommit    bool `json:"fullSRPOnCommit"`
+	// SrpStrictOnStaged makes SRP block the commit on any violation in a
+	// staged file (git diff-filter=ACMR), regardless of warnOnly. The
+	// full-repo audit and per-app report are unaffected — they keep
+	// surfacing legacy debt as warnings. Equivalent to setting
+	// srpConfig.errorScopes: ["changed"] but expressed as a single feature
+	// flag for the common "ratchet new work, audit existing code" workflow.
+	SrpStrictOnStaged  bool `json:"srpStrictOnStaged"`
 	TestFiles          bool `json:"testFiles"`
 	MockCheck          bool `json:"mockCheck"`
 	VitestAssertions   bool `json:"vitestAssertions"`
@@ -391,6 +398,14 @@ type SRPConfig struct {
 	// mechanism: existing files stay at warning-level while newly authored
 	// or modified code is held to the strict standard.
 	ErrorScopes []string `json:"errorScopes"`
+	// WarningOnlyPaths is the per-file/per-directory exemption list. Any
+	// file whose path matches an entry (substring match — accepts both
+	// directory patterns like "apps/web/legacy/" and exact files like
+	// "apps/web/foo/bar.tsx") has all SRP violations forced to "warning"
+	// severity, overriding ErrorPaths, ErrorScopes, and srpStrictOnStaged.
+	// Unlike ExcludePaths, the file stays in scope — violations still show
+	// up in the audit report, they just don't block the commit.
+	WarningOnlyPaths []string `json:"warningOnlyPaths"`
 	// TestRequired configures the testRequired rule (requires enabledRules to include "testRequired").
 	// Accepts a single object (legacy) or an array of named profiles.
 	TestRequired TestRequiredProfiles `json:"testRequired"`
@@ -528,6 +543,22 @@ func (c SRPConfig) isErrorPath(file string) bool {
 	return false
 }
 
+// isWarningOnlyPath reports whether a file is exempt from error-severity
+// escalation. Substring match against WarningOnlyPaths entries — supports
+// directory patterns ("apps/web/legacy/") and exact files
+// ("apps/web/foo/bar.tsx") with the same syntax.
+func (c SRPConfig) isWarningOnlyPath(file string) bool {
+	for _, p := range c.WarningOnlyPaths {
+		if p == "" {
+			continue
+		}
+		if strings.Contains(file, p) {
+			return true
+		}
+	}
+	return false
+}
+
 // hasErrorScope reports whether the given change-scope ("new" or "changed")
 // is configured in ErrorScopes.
 func (c SRPConfig) hasErrorScope(scope string) bool {
@@ -537,6 +568,21 @@ func (c SRPConfig) hasErrorScope(scope string) bool {
 		}
 	}
 	return false
+}
+
+// withStagedStrict returns a copy of c with "changed" added to ErrorScopes
+// when strict==true. Used to implement features.srpStrictOnStaged without
+// mutating the loaded config. Idempotent: a no-op when "changed" is already
+// present or strict is false.
+func (c SRPConfig) withStagedStrict(strict bool) SRPConfig {
+	if !strict || c.hasErrorScope("changed") {
+		return c
+	}
+	scopes := make([]string, len(c.ErrorScopes), len(c.ErrorScopes)+1)
+	copy(scopes, c.ErrorScopes)
+	scopes = append(scopes, "changed")
+	c.ErrorScopes = scopes
+	return c
 }
 
 // resolvedTestRequired returns test profiles with defaults applied per profile.

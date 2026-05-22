@@ -260,6 +260,230 @@ func TestValidateSRPComplianceWithEnabledRules(t *testing.T) {
 	}
 }
 
+func TestWarningOnlyPaths(t *testing.T) {
+	code := "import { useQuery } from 'convex/react';"
+
+	tests := []struct {
+		name             string
+		warningOnlyPaths []string
+		errorPaths       []string
+		errorScopes      []string
+		warnOnly         []string
+		newFiles         map[string]bool
+		changedFiles     map[string]bool
+		file             string
+		wantSeverity     string
+	}{
+		{
+			name:             "exact file match forces warning",
+			warningOnlyPaths: []string{"apps/web/legacy/Bar.tsx"},
+			file:             "apps/web/legacy/Bar.tsx",
+			wantSeverity:     "warning",
+		},
+		{
+			name:             "directory prefix forces warning",
+			warningOnlyPaths: []string{"apps/web/legacy/"},
+			file:             "apps/web/legacy/components/Inner.tsx",
+			wantSeverity:     "warning",
+		},
+		{
+			name:             "non-matching file is unaffected",
+			warningOnlyPaths: []string{"apps/web/legacy/"},
+			file:             "apps/web/fresh/Foo.tsx",
+			wantSeverity:     "error",
+		},
+		{
+			name:             "warningOnlyPaths beats errorPaths",
+			warningOnlyPaths: []string{"apps/mobile/exempt-me.tsx"},
+			errorPaths:       []string{"apps/mobile/"},
+			warnOnly:         []string{"directConvexImports"},
+			file:             "apps/mobile/exempt-me.tsx",
+			wantSeverity:     "warning",
+		},
+		{
+			name:             "warningOnlyPaths beats errorScopes (srpStrictOnStaged)",
+			warningOnlyPaths: []string{"apps/web/generated/"},
+			errorScopes:      []string{"changed"},
+			warnOnly:         []string{"directConvexImports"},
+			changedFiles:     map[string]bool{"apps/web/generated/api.ts": true},
+			file:             "apps/web/generated/api.ts",
+			wantSeverity:     "warning",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			checker := &SRPChecker{
+				config: SRPConfig{
+					WarningOnlyPaths: tt.warningOnlyPaths,
+					ErrorPaths:       tt.errorPaths,
+					ErrorScopes:      tt.errorScopes,
+					WarnOnly:         tt.warnOnly,
+				},
+				newFiles:     tt.newFiles,
+				changedFiles: tt.changedFiles,
+			}
+			analysis := checker.analyzeCode(code, tt.file)
+			vs := checker.validateSRPCompliance(analysis, tt.file)
+			if len(vs) == 0 {
+				t.Fatalf("expected violation for %s", tt.file)
+			}
+			if vs[0].Severity != tt.wantSeverity {
+				t.Errorf("got %q, want %q", vs[0].Severity, tt.wantSeverity)
+			}
+		})
+	}
+}
+
+func TestWarningOnlyPaths_TestRequired(t *testing.T) {
+	tmpDir := t.TempDir()
+	exempt := filepath.Join(tmpDir, "Exempt.tsx")
+	enforced := filepath.Join(tmpDir, "Enforced.tsx")
+	_ = os.WriteFile(exempt, []byte("export function E() {}"), 0644)
+	_ = os.WriteFile(enforced, []byte("export function F() {}"), 0644)
+
+	checker := &SRPChecker{
+		config: SRPConfig{
+			EnabledRules:     []string{"testRequired"},
+			WarningOnlyPaths: []string{exempt},
+			TestRequired: TestRequiredProfiles{{
+				Scope:      "all",
+				Extensions: []string{".tsx"},
+				Severity:   "error",
+			}},
+		},
+		statFunc: os.Stat,
+	}
+
+	violations := checker.checkTestRequired([]string{exempt, enforced})
+	if len(violations) != 2 {
+		t.Fatalf("got %d violations, want 2", len(violations))
+	}
+	got := map[string]string{}
+	for _, v := range violations {
+		got[v.File] = v.Severity
+	}
+	if got[exempt] != "warning" {
+		t.Errorf("exempt: got %q, want warning (exemption overrides explicit profile severity)", got[exempt])
+	}
+	if got[enforced] != "error" {
+		t.Errorf("enforced: got %q, want error", got[enforced])
+	}
+}
+
+func TestSRPConfig_withStagedStrict(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  []string
+		strict bool
+		want   []string
+	}{
+		{
+			name:   "strict=false leaves errorScopes unchanged",
+			input:  []string{"new"},
+			strict: false,
+			want:   []string{"new"},
+		},
+		{
+			name:   "strict=true adds 'changed' when absent",
+			input:  []string{"new"},
+			strict: true,
+			want:   []string{"new", "changed"},
+		},
+		{
+			name:   "strict=true is idempotent when 'changed' already present",
+			input:  []string{"changed"},
+			strict: true,
+			want:   []string{"changed"},
+		},
+		{
+			name:   "strict=true on empty errorScopes",
+			input:  nil,
+			strict: true,
+			want:   []string{"changed"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := SRPConfig{ErrorScopes: tt.input}
+			got := cfg.withStagedStrict(tt.strict).ErrorScopes
+			if len(got) != len(tt.want) {
+				t.Fatalf("got %v, want %v", got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("index %d: got %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+			// Verify original is not mutated
+			if tt.strict && len(tt.input) > 0 {
+				cfg.hasErrorScope("changed") // touch the original
+				if cfg.hasErrorScope("changed") && !contains(tt.input, "changed") {
+					t.Errorf("original SRPConfig was mutated; ErrorScopes=%v", cfg.ErrorScopes)
+				}
+			}
+		})
+	}
+}
+
+func contains(s []string, v string) bool {
+	for _, x := range s {
+		if x == v {
+			return true
+		}
+	}
+	return false
+}
+
+func TestSrpStrictOnStaged_EndToEnd(t *testing.T) {
+	// Simulates the wiring done in main.go: features.srpStrictOnStaged
+	// injects "changed" into ErrorScopes, which then drives the severity
+	// loop in validateSRPCompliance.
+	code := "import { useQuery } from 'convex/react';"
+	stagedFile := "apps/web/components/foo/Foo.tsx"
+	legacyFile := "apps/web/components/bar/Bar.tsx"
+
+	// Start with a config that warns globally but has no errorScopes.
+	baseCfg := SRPConfig{
+		WarnOnly: []string{"directConvexImports"},
+	}
+
+	// The flag is OFF — both files should warn.
+	t.Run("flag off: both files warn", func(t *testing.T) {
+		cfg := baseCfg.withStagedStrict(false)
+		checker := &SRPChecker{
+			config:       cfg,
+			changedFiles: map[string]bool{stagedFile: true},
+		}
+		for _, f := range []string{stagedFile, legacyFile} {
+			analysis := checker.analyzeCode(code, f)
+			vs := checker.validateSRPCompliance(analysis, f)
+			if len(vs) == 0 || vs[0].Severity != "warning" {
+				t.Errorf("file %s: got %+v, want warning", f, vs)
+			}
+		}
+	})
+
+	// The flag is ON — staged file errors, untouched legacy file still warns.
+	t.Run("flag on: staged errors, legacy warns", func(t *testing.T) {
+		cfg := baseCfg.withStagedStrict(true)
+		checker := &SRPChecker{
+			config:       cfg,
+			changedFiles: map[string]bool{stagedFile: true},
+		}
+
+		staged := checker.validateSRPCompliance(checker.analyzeCode(code, stagedFile), stagedFile)
+		if len(staged) == 0 || staged[0].Severity != "error" {
+			t.Errorf("staged file: got %+v, want error", staged)
+		}
+
+		legacy := checker.validateSRPCompliance(checker.analyzeCode(code, legacyFile), legacyFile)
+		if len(legacy) == 0 || legacy[0].Severity != "warning" {
+			t.Errorf("legacy file: got %+v, want warning (audit still surfaces it)", legacy)
+		}
+	})
+}
+
 func TestErrorScopesOverride(t *testing.T) {
 	code := "import { useQuery } from 'convex/react';"
 	newFile := "apps/web/components/foo/Foo.tsx"
