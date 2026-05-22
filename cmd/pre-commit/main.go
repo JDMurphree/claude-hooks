@@ -635,13 +635,12 @@ func run() error {
 				srpFiles = stagedFiles
 			}
 
-			var newFiles, changedFiles map[string]bool
-			if config.SRPConfig.isRuleEnabled("testRequired") {
-				newFiles, _ = getNewlyAddedFiles()
-				changedFiles = make(map[string]bool, len(stagedFiles))
-				for _, f := range stagedFiles {
-					changedFiles[f] = true
-				}
+			// Populate newFiles/changedFiles for both testRequired (scope filter)
+			// and errorScopes (severity escalation on new/changed files).
+			newFiles, _ := getNewlyAddedFiles()
+			changedFiles := make(map[string]bool, len(stagedFiles))
+			for _, f := range stagedFiles {
+				changedFiles[f] = true
 			}
 
 			filterResult := filterFilesForSRPWithDetails(srpFiles, config.SRPConfig)
@@ -1067,7 +1066,12 @@ func runSpecificCheck(name string, config *Config, files []string) error {
 		return runFrontendStructureCheck(config.Apps, files)
 	case "srp":
 		filterResult := filterFilesForSRPWithDetails(files, config.SRPConfig)
-		return runSRPCheckWithFilter(filterResult, config.SRPConfig, true, nil, nil)
+		newFiles, _ := getNewlyAddedFiles()
+		changedFiles := make(map[string]bool, len(files))
+		for _, f := range files {
+			changedFiles[f] = true
+		}
+		return runSRPCheckWithFilter(filterResult, config.SRPConfig, true, newFiles, changedFiles)
 	case "mockCheck":
 		return runMockCheck(files, config.MockCheck)
 	case "consoleCheck":
@@ -1190,7 +1194,14 @@ func runAllStandaloneChecks(config *Config, files []string) error {
 	// SRP check
 	if config.Features.SRP {
 		filterResult := filterFilesForSRPWithDetails(files, config.SRPConfig)
-		collectResult("srp", runSRPCheckWithFilter(filterResult, config.SRPConfig, true, nil, nil))
+		// In standalone mode there may be no git context; getNewlyAddedFiles
+		// returns an empty/nil map and errorScopes simply has no effect.
+		newFiles, _ := getNewlyAddedFiles()
+		changedFiles := make(map[string]bool, len(files))
+		for _, f := range files {
+			changedFiles[f] = true
+		}
+		collectResult("srp", runSRPCheckWithFilter(filterResult, config.SRPConfig, true, newFiles, changedFiles))
 	}
 
 	// Mock check

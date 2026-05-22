@@ -384,6 +384,13 @@ type SRPConfig struct {
 	// app (e.g. apps/mobile/) enforce SRP strictly while other apps stay at
 	// warning-level. Matching is by prefix (Contains) against the file path.
 	ErrorPaths []string `json:"errorPaths"`
+	// ErrorScopes specifies git-change scopes whose SRP violations should
+	// remain errors even when their rule is listed in WarnOnly. Accepted
+	// values: "new" (files added in this commit, git diff-filter=A) and
+	// "changed" (any staged file, diff-filter=ACMR). This is the ratchet
+	// mechanism: existing files stay at warning-level while newly authored
+	// or modified code is held to the strict standard.
+	ErrorScopes []string `json:"errorScopes"`
 	// TestRequired configures the testRequired rule (requires enabledRules to include "testRequired").
 	// Accepts a single object (legacy) or an array of named profiles.
 	TestRequired TestRequiredProfiles `json:"testRequired"`
@@ -515,6 +522,17 @@ func (c SRPConfig) isErrorPath(file string) bool {
 			continue
 		}
 		if strings.Contains(file, p) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasErrorScope reports whether the given change-scope ("new" or "changed")
+// is configured in ErrorScopes.
+func (c SRPConfig) hasErrorScope(scope string) bool {
+	for _, s := range c.ErrorScopes {
+		if s == scope {
 			return true
 		}
 	}

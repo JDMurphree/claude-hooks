@@ -1,0 +1,1 @@
+feat(pre-commit): add errorScopes to ratchet SRP onto new files only

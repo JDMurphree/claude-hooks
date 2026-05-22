@@ -252,9 +252,12 @@ func (c *SRPChecker) validateSRPCompliance(analysis *SRPAnalysis, filePath strin
 		violations = append(violations, c.checkMixedConcerns(analysis, filePath)...)
 	}
 
-	// Apply warnOnly overrides — but ErrorPaths keep their severity.
+	// Apply warnOnly overrides — but ErrorPaths and ErrorScopes keep their severity.
 	for i := range violations {
 		if c.config.isErrorPath(violations[i].File) {
+			continue
+		}
+		if c.isInErrorScope(violations[i].File) {
 			continue
 		}
 		if c.config.isWarnOnly(violations[i].RuleID) {
@@ -263,6 +266,20 @@ func (c *SRPChecker) validateSRPCompliance(analysis *SRPAnalysis, filePath strin
 	}
 
 	return violations
+}
+
+// isInErrorScope returns true when the file's git-change status matches one of
+// the configured ErrorScopes. "new" requires the file to be in newFiles
+// (diff-filter=A); "changed" requires it to be in changedFiles (diff-filter=ACMR).
+// Returns false when no scope is configured or the relevant file set is nil.
+func (c *SRPChecker) isInErrorScope(file string) bool {
+	if c.config.hasErrorScope("new") && c.newFiles != nil && c.newFiles[file] {
+		return true
+	}
+	if c.config.hasErrorScope("changed") && c.changedFiles != nil && c.changedFiles[file] {
+		return true
+	}
+	return false
 }
 
 func (c *SRPChecker) checkDirectConvexImports(analysis *SRPAnalysis, filePath string) []SRPViolation {
@@ -577,13 +594,15 @@ func (c *SRPChecker) checkTestRequired(files []string) []SRPViolation {
 				// other apps (e.g. apps/web) only warn — set Severity explicitly
 				// per profile. If the field is omitted, fall back to the global
 				// warnOnly behaviour ("error" → "warning" when in WarnOnly).
-				// ErrorPaths trumps WarnOnly for files under those prefixes.
+				// ErrorPaths and ErrorScopes both trump WarnOnly: a file under
+				// an error path, or matching a configured change scope, stays
+				// at error severity.
 				var severity string
 				switch cfg.Severity {
 				case "error", "warning":
 					severity = cfg.Severity
 				default:
-					if c.config.isWarnOnly("testRequired") && !c.config.isErrorPath(file) {
+					if c.config.isWarnOnly("testRequired") && !c.config.isErrorPath(file) && !c.isInErrorScope(file) {
 						severity = "warning"
 					} else {
 						severity = "error"

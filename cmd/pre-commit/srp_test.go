@@ -260,6 +260,122 @@ func TestValidateSRPComplianceWithEnabledRules(t *testing.T) {
 	}
 }
 
+func TestErrorScopesOverride(t *testing.T) {
+	code := "import { useQuery } from 'convex/react';"
+	newFile := "apps/web/components/foo/Foo.tsx"
+	legacyFile := "apps/web/components/bar/Bar.tsx"
+
+	tests := []struct {
+		name         string
+		errorScopes  []string
+		warnOnly     []string
+		newFiles     map[string]bool
+		changedFiles map[string]bool
+		file         string
+		wantSeverity string
+	}{
+		{
+			name:         "warnOnly downgrades legacy file when scope=new",
+			errorScopes:  []string{"new"},
+			warnOnly:     []string{"directConvexImports"},
+			newFiles:     map[string]bool{newFile: true},
+			file:         legacyFile,
+			wantSeverity: "warning",
+		},
+		{
+			name:         "errorScopes=new keeps newly added file as error",
+			errorScopes:  []string{"new"},
+			warnOnly:     []string{"directConvexImports"},
+			newFiles:     map[string]bool{newFile: true},
+			file:         newFile,
+			wantSeverity: "error",
+		},
+		{
+			name:         "errorScopes=changed keeps modified file as error",
+			errorScopes:  []string{"changed"},
+			warnOnly:     []string{"directConvexImports"},
+			changedFiles: map[string]bool{legacyFile: true},
+			file:         legacyFile,
+			wantSeverity: "error",
+		},
+		{
+			name:         "errorScopes=changed does not affect untouched file",
+			errorScopes:  []string{"changed"},
+			warnOnly:     []string{"directConvexImports"},
+			changedFiles: map[string]bool{newFile: true},
+			file:         legacyFile,
+			wantSeverity: "warning",
+		},
+		{
+			name:         "no errorScopes preserves warnOnly downgrade for new files",
+			errorScopes:  nil,
+			warnOnly:     []string{"directConvexImports"},
+			newFiles:     map[string]bool{newFile: true},
+			file:         newFile,
+			wantSeverity: "warning",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			checker := &SRPChecker{
+				config: SRPConfig{
+					WarnOnly:    tt.warnOnly,
+					ErrorScopes: tt.errorScopes,
+				},
+				newFiles:     tt.newFiles,
+				changedFiles: tt.changedFiles,
+			}
+			analysis := checker.analyzeCode(code, tt.file)
+			violations := checker.validateSRPCompliance(analysis, tt.file)
+			if len(violations) == 0 {
+				t.Fatalf("expected violation for %s", tt.file)
+			}
+			if violations[0].Severity != tt.wantSeverity {
+				t.Errorf("got severity %q, want %q", violations[0].Severity, tt.wantSeverity)
+			}
+		})
+	}
+}
+
+func TestErrorScopesWithTestRequired(t *testing.T) {
+	tmpDir := t.TempDir()
+	newSrc := filepath.Join(tmpDir, "New.tsx")
+	legacySrc := filepath.Join(tmpDir, "Legacy.tsx")
+	_ = os.WriteFile(newSrc, []byte("export function New() {}"), 0644)
+	_ = os.WriteFile(legacySrc, []byte("export function Legacy() {}"), 0644)
+
+	checker := &SRPChecker{
+		config: SRPConfig{
+			EnabledRules: []string{"testRequired"},
+			WarnOnly:     []string{"testRequired"},
+			ErrorScopes:  []string{"new"},
+			TestRequired: TestRequiredProfiles{{
+				Scope:      "all",
+				Extensions: []string{".tsx"},
+			}},
+		},
+		statFunc: os.Stat,
+		newFiles: map[string]bool{newSrc: true},
+	}
+
+	violations := checker.checkTestRequired([]string{newSrc, legacySrc})
+	if len(violations) != 2 {
+		t.Fatalf("got %d violations, want 2", len(violations))
+	}
+
+	got := map[string]string{}
+	for _, v := range violations {
+		got[v.File] = v.Severity
+	}
+	if got[newSrc] != "error" {
+		t.Errorf("new file: got severity %q, want error", got[newSrc])
+	}
+	if got[legacySrc] != "warning" {
+		t.Errorf("legacy file: got severity %q, want warning", got[legacySrc])
+	}
+}
+
 func TestWarnOnlyOverride(t *testing.T) {
 	code := "import { useQuery } from 'convex/react';"
 	filePath := "apps/mobile/src/components/Foo.tsx"
