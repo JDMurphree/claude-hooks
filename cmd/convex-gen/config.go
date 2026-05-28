@@ -9,12 +9,12 @@ import (
 
 // Config represents the .convex-gen.json configuration
 type Config struct {
-	Org       string          `json:"org"`       // e.g., "@dashtag"
-	Convex    ConvexConfig    `json:"convex"`    // Convex backend configuration
-	DataLayer DataLayerConfig `json:"dataLayer"` // Data layer output configuration
-	Imports   ImportsConfig   `json:"imports"`   // Import path configuration
+	Org        string           `json:"org"`        // e.g., "@dashtag"
+	Convex     ConvexConfig     `json:"convex"`     // Convex backend configuration
+	DataLayer  DataLayerConfig  `json:"dataLayer"`  // Data layer output configuration
+	Imports    ImportsConfig    `json:"imports"`    // Import path configuration
 	Generators GeneratorsConfig `json:"generators"` // Which generators to run
-	Skip      SkipConfig      `json:"skip"`      // Files/patterns to skip
+	Skip       SkipConfig       `json:"skip"`       // Files/patterns to skip
 }
 
 // ConvexConfig configures where to find Convex functions
@@ -36,6 +36,7 @@ type DataLayerConfig struct {
 	HookNaming    string `json:"hookNaming"`    // "flat" (no sub-namespace), "qualified" (always sub-namespace), or "auto" (sub-namespace only on collision)
 	ExportAPI     bool   `json:"exportApi"`     // Re-export { api } from the generated-api index
 	TypedReturns  bool   `json:"typedReturns"`  // When true, emit typed `FunctionReturnType<typeof api.x.y> | undefined` on shouldSkip query hooks instead of `as any`
+	TypedArgs     bool   `json:"typedArgs"`     // When true, emit typed `ReactMutation<typeof api.x.y>` / `ReactAction<...>` annotations on mutation/action hooks so caller args are type-checked. Defaults to false (untyped) for backwards compatibility.
 }
 
 // ImportsConfig configures how generated code imports dependencies
@@ -179,12 +180,12 @@ func applyConfigDefaults(config *Config) {
 	}
 	if len(config.Skip.Patterns) == 0 {
 		config.Skip.Patterns = []string{
-			"^_",           // Files starting with underscore
-			"\\.test\\.",   // Test files
-			"\\.spec\\.",   // Spec files
-			"^debug",       // Debug files
-			"^migrate",     // Migration files
-			"^seed",        // Seed files
+			"^_",         // Files starting with underscore
+			"\\.test\\.", // Test files
+			"\\.spec\\.", // Spec files
+			"^debug",     // Debug files
+			"^migrate",   // Migration files
+			"^seed",      // Seed files
 		}
 	}
 }

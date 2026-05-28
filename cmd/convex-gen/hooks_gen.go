@@ -248,6 +248,12 @@ func (g *HooksGenerator) generateSplitHookFileContent(topNamespace, fullNamespac
 	if g.config.DataLayer.TypedReturns && funcType == "query" && needsRegularQuery {
 		sb.WriteString("import type { FunctionReturnType } from 'convex/server';\n")
 	}
+	if g.config.DataLayer.TypedArgs && funcType == "mutation" {
+		sb.WriteString("import type { ReactMutation } from 'convex/react';\n")
+	}
+	if g.config.DataLayer.TypedArgs && funcType == "action" {
+		sb.WriteString("import type { ReactAction } from 'convex/react';\n")
+	}
 
 	sb.WriteString("\n")
 
@@ -371,6 +377,12 @@ func (g *HooksGenerator) generateGroupedHookFileContent(topNamespace string, fun
 	if g.config.DataLayer.TypedReturns && funcType == "query" && needsRegularQuery {
 		sb.WriteString("import type { FunctionReturnType } from \"convex/server\";\n")
 	}
+	if g.config.DataLayer.TypedArgs && funcType == "mutation" {
+		sb.WriteString("import type { ReactMutation } from \"convex/react\";\n")
+	}
+	if g.config.DataLayer.TypedArgs && funcType == "action" {
+		sb.WriteString("import type { ReactAction } from \"convex/react\";\n")
+	}
 
 	// Generate hooks grouped by sub-namespace with section comments
 	for _, subNs := range subNamespaces {
@@ -485,8 +497,12 @@ func (g *HooksGenerator) generateHook(topNamespace string, fn ConvexFunction, co
 
 	// Function signature
 	params := g.generateParamsV2(fn)
+	// Exactly one of these is non-empty: returnAnnotation for queries
+	// (typedReturns), argsAnnotation for mutations/actions (typedArgs). Both are
+	// "" when their flag is disabled, preserving the historical untyped output.
 	returnAnnotation := g.generateReturnAnnotation(fn, apiPath)
-	sb.WriteString(fmt.Sprintf("export function %s(%s)%s {\n", hookName, params, returnAnnotation))
+	argsAnnotation := g.generateArgsAnnotation(fn, apiPath)
+	sb.WriteString(fmt.Sprintf("export function %s(%s)%s%s {\n", hookName, params, returnAnnotation, argsAnnotation))
 
 	// Add @ts-ignore comment for deep type issues
 	sb.WriteString("  // @ts-ignore - TS2589: Deep type instantiation with nested API path\n")
@@ -558,8 +574,12 @@ func (g *HooksGenerator) generateSplitHook(topNamespace string, fn ConvexFunctio
 
 	// Function signature
 	params := g.generateParamsV2(fn)
+	// Exactly one of these is non-empty: returnAnnotation for queries
+	// (typedReturns), argsAnnotation for mutations/actions (typedArgs). Both are
+	// "" when their flag is disabled, preserving the historical untyped output.
 	returnAnnotation := g.generateReturnAnnotation(fn, apiPath)
-	sb.WriteString(fmt.Sprintf("export function %s(%s)%s {\n", hookName, params, returnAnnotation))
+	argsAnnotation := g.generateArgsAnnotation(fn, apiPath)
+	sb.WriteString(fmt.Sprintf("export function %s(%s)%s%s {\n", hookName, params, returnAnnotation, argsAnnotation))
 
 	// Add @ts-ignore comment for deep type issues
 	sb.WriteString("  // @ts-ignore - TS2589: Deep type instantiation with nested API path\n")
@@ -662,7 +682,8 @@ func (g *HooksGenerator) getTypeScriptType(arg ArgInfo) string {
 //
 // Returns "" (no annotation) when:
 //   - typedReturns is disabled in config (preserves existing untyped behavior)
-//   - the function is not a query (mutations/actions are typed natively by useMutation/useAction)
+//   - the function is not a query (mutation/action arg typing is handled by
+//     generateArgsAnnotation under the separate typedArgs flag)
 //   - the query is paginated (the existing emit already preserves return types via usePaginatedQuery's generic)
 //
 // Otherwise returns ": FunctionReturnType<typeof <apiPath>> | undefined". The trailing
@@ -678,6 +699,34 @@ func (g *HooksGenerator) generateReturnAnnotation(fn ConvexFunction, apiPath str
 		return ""
 	}
 	return fmt.Sprintf(": FunctionReturnType<typeof %s> | undefined", apiPath)
+}
+
+// generateArgsAnnotation produces the TypeScript return-type annotation for a
+// mutation/action hook when `dataLayer.typedArgs` is enabled.
+//
+// The hook body is emitted under a `// @ts-ignore - TS2589` (the nested api
+// path overflows TypeScript's instantiation depth during inference). That
+// suppression also erases the inferred call signature, so without an explicit
+// annotation `useFooMutation()` returns an untyped function and caller
+// arguments are never checked against the validator. Hoisting the type onto
+// the signature — exactly as generateReturnAnnotation does for queries —
+// restores arg checking while keeping the body suppressed.
+//
+// Returns "" (no annotation, the historical behavior) when:
+//   - typedArgs is disabled in config (this is the default — backwards compatible)
+//   - the function is a query (queries are covered by typedReturns instead)
+func (g *HooksGenerator) generateArgsAnnotation(fn ConvexFunction, apiPath string) string {
+	if !g.config.DataLayer.TypedArgs {
+		return ""
+	}
+	switch fn.Type {
+	case FunctionTypeMutation:
+		return fmt.Sprintf(": ReactMutation<typeof %s>", apiPath)
+	case FunctionTypeAction:
+		return fmt.Sprintf(": ReactAction<typeof %s>", apiPath)
+	default:
+		return ""
+	}
 }
 
 // generateHookBodyV2 creates the body of a hook function matching TypeScript output

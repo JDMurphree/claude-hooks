@@ -1,0 +1,1 @@
+feat(convex-gen): add typedArgs flag for typed mutation/action hook args
