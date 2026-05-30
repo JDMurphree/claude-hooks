@@ -78,6 +78,7 @@ var checkKeyToDisplay = map[string]string{
 	"testSubstanceCheck":      "Test substance",
 	"redundantCreatedAtCheck": "Redundant createdAt",
 	"tiersGen":                "Tiers gen",
+	"linguiExtract":           "Lingui extract",
 	"tests":                   "Tests",
 }
 
@@ -471,6 +472,18 @@ func run() error {
 		projectRoot, _ := os.Getwd()
 		if err := checkTiersGen(projectRoot, stagedFiles); err != nil {
 			fmt.Fprintf(os.Stderr, "Tiers gen failed: %v\n", err)
+			return err
+		}
+	}
+
+	// linguiExtract: regenerates message catalogs (.po + compiled .ts) for any
+	// package whose staged source changed. Like tiersGen, must run before
+	// typecheck reads the regenerated output.
+	if config.Features.LinguiExtract {
+		printStart("Lingui extract")
+		projectRoot, _ := os.Getwd()
+		if err := checkLinguiExtract(projectRoot, stagedFiles); err != nil {
+			fmt.Fprintf(os.Stderr, "Lingui extract failed: %v\n", err)
 			return err
 		}
 	}

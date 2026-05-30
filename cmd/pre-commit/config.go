@@ -219,6 +219,7 @@ type Features struct {
 	MissingTestsCheck  bool `json:"missingTestsCheck"`
 	RedundantCreatedAtCheck bool `json:"redundantCreatedAtCheck"`
 	TiersGen           bool `json:"tiersGen"`
+	LinguiExtract      bool `json:"linguiExtract"`
 	// TestSubstanceCheck runs substance gates against test files for staged
 	// source files: LOC ratio, UI-interaction requirement, branch-proportional
 	// it() count, plus tautological-assertion detection. Catches "minimal
