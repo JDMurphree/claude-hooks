@@ -1,0 +1,1 @@
+feat(hooks): add self-healing hook-runner that rebuilds missing bin/ binaries on demand
