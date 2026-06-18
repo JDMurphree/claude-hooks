@@ -1,0 +1,1 @@
+fix(nextchecks): skip test and mock files so fixture asset/link paths are not flagged as dead

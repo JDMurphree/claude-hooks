@@ -1,0 +1,1 @@
+feat(validate-next): add localePrefix option to treat a leading [lang] segment as optional for link checks

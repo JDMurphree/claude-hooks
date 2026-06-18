@@ -66,7 +66,7 @@ func (g *TypesGenerator) generateTypesContent(tables []TableInfo) string {
 	sb.WriteString(" */\n\n")
 
 	// Imports
-	sb.WriteString(fmt.Sprintf("import type { Doc, Id } from '%s';\n\n", g.config.Imports.DataModel))
+	fmt.Fprintf(&sb, "import type { Doc, Id } from '%s';\n\n", g.config.Imports.DataModel)
 	sb.WriteString("// Re-export Doc and Id types so they can be imported from this file\n")
 	sb.WriteString("export type { Doc, Id };\n\n")
 
@@ -76,8 +76,8 @@ func (g *TypesGenerator) generateTypesContent(tables []TableInfo) string {
 	sb.WriteString("// ============================================================================\n\n")
 
 	for _, table := range tables {
-		sb.WriteString(fmt.Sprintf("/** %s table */\n", table.Name))
-		sb.WriteString(fmt.Sprintf("export type %s = Doc<\"%s\">;\n\n", table.TypeName, table.Name))
+		fmt.Fprintf(&sb, "/** %s table */\n", table.Name)
+		fmt.Fprintf(&sb, "export type %s = Doc<\"%s\">;\n\n", table.TypeName, table.Name)
 	}
 
 	// Table ID types section
@@ -86,7 +86,7 @@ func (g *TypesGenerator) generateTypesContent(tables []TableInfo) string {
 	sb.WriteString("// ============================================================================\n\n")
 
 	for _, table := range tables {
-		sb.WriteString(fmt.Sprintf("export type %sId = Id<\"%s\">;\n", table.TypeName, table.Name))
+		fmt.Fprintf(&sb, "export type %sId = Id<\"%s\">;\n", table.TypeName, table.Name)
 	}
 	sb.WriteString("\n")
 
@@ -104,7 +104,7 @@ func (g *TypesGenerator) generateTypesContent(tables []TableInfo) string {
 		for i, table := range tables {
 			tableNames[i] = fmt.Sprintf("\"%s\"", table.Name)
 		}
-		sb.WriteString(fmt.Sprintf("export type TableName = %s;\n\n", strings.Join(tableNames, " | ")))
+		fmt.Fprintf(&sb, "export type TableName = %s;\n\n", strings.Join(tableNames, " | "))
 	}
 
 	// Entity type union (singular form)
@@ -116,16 +116,16 @@ func (g *TypesGenerator) generateTypesContent(tables []TableInfo) string {
 		for i, table := range tables {
 			entityTypes[i] = fmt.Sprintf("\"%s\"", toSingular(table.Name))
 		}
-		sb.WriteString(fmt.Sprintf("export type EntityType = %s;\n\n", strings.Join(entityTypes, " | ")))
+		fmt.Fprintf(&sb, "export type EntityType = %s;\n\n", strings.Join(entityTypes, " | "))
 	}
 
 	// Summary comment
 	sb.WriteString("/**\n")
-	sb.WriteString(fmt.Sprintf(" * Generated %d table types from Convex schema\n", len(tables)))
+	fmt.Fprintf(&sb, " * Generated %d table types from Convex schema\n", len(tables))
 	sb.WriteString(" *\n")
 	sb.WriteString(" * Tables:\n")
 	for _, table := range tables {
-		sb.WriteString(fmt.Sprintf(" * - %s\n", table.Name))
+		fmt.Fprintf(&sb, " * - %s\n", table.Name)
 	}
 	sb.WriteString(" */\n")
 

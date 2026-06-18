@@ -249,11 +249,11 @@ func writeRedundantCreatedAtReport(violations []string, projectRoot, baseDir str
 
 		var sb strings.Builder
 		sb.WriteString(strings.Repeat("=", 80) + "\n")
-		sb.WriteString(fmt.Sprintf("REDUNDANT createdAt - %s\n", strings.ToUpper(app)))
-		sb.WriteString(fmt.Sprintf("Generated: %s\n", generated))
+		fmt.Fprintf(&sb, "REDUNDANT createdAt - %s\n", strings.ToUpper(app))
+		fmt.Fprintf(&sb, "Generated: %s\n", generated)
 		sb.WriteString(strings.Repeat("=", 80) + "\n\n")
-		sb.WriteString(fmt.Sprintf("Schema files with createdAt in defineTable: %d\n", len(entries)))
-		sb.WriteString(fmt.Sprintf("Total createdAt occurrences: %d\n\n", appTotal))
+		fmt.Fprintf(&sb, "Schema files with createdAt in defineTable: %d\n", len(entries))
+		fmt.Fprintf(&sb, "Total createdAt occurrences: %d\n\n", appTotal)
 		sb.WriteString("Convex automatically maintains `_creationTime: number` on every row.\n")
 		sb.WriteString("A custom `createdAt` column inside defineTable({...}) duplicates that\n")
 		sb.WriteString("data and risks drift when callers pass a different value.\n\n")
@@ -264,7 +264,7 @@ func writeRedundantCreatedAtReport(violations []string, projectRoot, baseDir str
 		sb.WriteString("VIOLATIONS (count = occurrences in that file)\n")
 		sb.WriteString(strings.Repeat("-", 40) + "\n\n")
 		for _, e := range entries {
-			sb.WriteString(fmt.Sprintf("  [%3d]  %s\n", e.count, e.path))
+			fmt.Fprintf(&sb, "  [%3d]  %s\n", e.count, e.path)
 		}
 
 		reportPath := filepath.Join(outDir, app+".txt")

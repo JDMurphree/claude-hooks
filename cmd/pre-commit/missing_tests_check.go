@@ -463,10 +463,10 @@ func writeMissingTestsReport(missing []missingTest, projectRoot, baseDir string)
 
 		var sb strings.Builder
 		sb.WriteString(strings.Repeat("=", 80) + "\n")
-		sb.WriteString(fmt.Sprintf("MISSING TESTS - %s\n", strings.ToUpper(app)))
-		sb.WriteString(fmt.Sprintf("Generated: %s\n", generated))
+		fmt.Fprintf(&sb, "MISSING TESTS - %s\n", strings.ToUpper(app))
+		fmt.Fprintf(&sb, "Generated: %s\n", generated)
 		sb.WriteString(strings.Repeat("=", 80) + "\n\n")
-		sb.WriteString(fmt.Sprintf("Total source files without co-located tests: %d\n\n", len(entries)))
+		fmt.Fprintf(&sb, "Total source files without co-located tests: %d\n\n", len(entries))
 		sb.WriteString("Each source file below is expected to have a .test.ts(x) or .spec.ts(x)\n")
 		sb.WriteString("sibling. Create the test file or add the path to\n")
 		sb.WriteString("missingTestsCheckConfig.excludePaths.\n\n")
@@ -474,8 +474,8 @@ func writeMissingTestsReport(missing []missingTest, projectRoot, baseDir string)
 		sb.WriteString("MISSING TESTS\n")
 		sb.WriteString(strings.Repeat("-", 40) + "\n\n")
 		for _, e := range entries {
-			sb.WriteString(fmt.Sprintf("  %s\n", e.source))
-			sb.WriteString(fmt.Sprintf("    → expected: %s\n", e.expected))
+			fmt.Fprintf(&sb, "  %s\n", e.source)
+			fmt.Fprintf(&sb, "    → expected: %s\n", e.expected)
 		}
 
 		reportPath := filepath.Join(outDir, app+".txt")

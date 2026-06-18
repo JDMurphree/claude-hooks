@@ -220,8 +220,8 @@ func writeTestReport(appName, output string, testErr error, baseDir string) {
 
 	var sb strings.Builder
 	sb.WriteString(strings.Repeat("=", 80) + "\n")
-	sb.WriteString(fmt.Sprintf("TEST REPORT: %s\n", appName))
-	sb.WriteString(fmt.Sprintf("Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
+	fmt.Fprintf(&sb, "TEST REPORT: %s\n", appName)
+	fmt.Fprintf(&sb, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 	if testErr != nil {
 		sb.WriteString("Result: FAILED\n")
 	} else {

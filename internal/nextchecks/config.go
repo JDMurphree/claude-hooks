@@ -36,6 +36,12 @@ type LinkConfig struct {
 	SrcDirs []string `json:"srcDirs"`
 	BaseURL string   `json:"baseUrl"` // crawl mode target
 	Ignore  []string `json:"ignore"`  // link path prefixes to skip
+	// LocalePrefix marks the app as using a leading dynamic locale segment
+	// (e.g. app/[lang]/...) that i18n middleware injects at runtime. When true,
+	// any route beginning with a dynamic segment also matches with that leading
+	// segment omitted, so locale-less links (href="/badges") resolve against
+	// locale-prefixed routes (/[lang]/badges). Off by default.
+	LocalePrefix bool `json:"localePrefix"`
 }
 
 var (

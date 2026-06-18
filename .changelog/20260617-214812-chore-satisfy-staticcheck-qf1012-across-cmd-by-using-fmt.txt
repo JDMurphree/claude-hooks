@@ -1,0 +1,1 @@
+chore: satisfy staticcheck QF1012 across cmd by using fmt.Fprintf

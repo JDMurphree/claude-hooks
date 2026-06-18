@@ -269,21 +269,21 @@ func writeSubstanceReport(rep *substanceReport) error {
 	var sb strings.Builder
 	sb.WriteString("================================================================================\n")
 	sb.WriteString("TEST SUBSTANCE REPORT\n")
-	sb.WriteString(fmt.Sprintf("Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
+	fmt.Fprintf(&sb, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 	sb.WriteString("================================================================================\n\n")
 	if len(rep.Files) == 0 {
 		sb.WriteString("No substance violations.\n")
 		return os.WriteFile(out, []byte(sb.String()), 0644)
 	}
-	sb.WriteString(fmt.Sprintf("Files with violations: %d\n\n", len(rep.Files)))
+	fmt.Fprintf(&sb, "Files with violations: %d\n\n", len(rep.Files))
 	for _, f := range rep.Files {
-		sb.WriteString(fmt.Sprintf("%s\n", f.Source))
-		sb.WriteString(fmt.Sprintf("  test: %s\n", f.Test))
+		fmt.Fprintf(&sb, "%s\n", f.Source)
+		fmt.Fprintf(&sb, "  test: %s\n", f.Test)
 		for _, v := range f.Substance {
-			sb.WriteString(fmt.Sprintf("  - [%s] %s\n", v.Kind, v.Message))
+			fmt.Fprintf(&sb, "  - [%s] %s\n", v.Kind, v.Message)
 		}
 		if f.Tautologies > 0 {
-			sb.WriteString(fmt.Sprintf("  - [tautological_assertions] %d expect(X).toBe(X)-style call(s)\n", f.Tautologies))
+			fmt.Fprintf(&sb, "  - [tautological_assertions] %d expect(X).toBe(X)-style call(s)\n", f.Tautologies)
 		}
 		if f.MajorityWeak {
 			sb.WriteString("  - [majority_weak] more than half of expect() calls are weak/tautological matchers\n")

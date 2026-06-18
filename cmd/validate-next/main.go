@@ -19,14 +19,16 @@ import (
 )
 
 var (
-	pathFlag  string
-	checkFlag string
-	helpFlag  bool
+	pathFlag         string
+	checkFlag        string
+	localePrefixFlag bool
+	helpFlag         bool
 )
 
 func init() {
 	flag.StringVar(&pathFlag, "path", ".", "Project directory to check (where .pre-commit.json lives or below)")
 	flag.StringVar(&checkFlag, "check", "both", "Which checks to run: images | links | both")
+	flag.BoolVar(&localePrefixFlag, "locale-prefix", false, "Treat a leading dynamic route segment (e.g. [lang]) as optional when matching links; overrides nextLinkCheck.localePrefix")
 	flag.BoolVar(&helpFlag, "help", false, "Show this help message")
 	flag.BoolVar(&helpFlag, "h", false, "Show this help message")
 }
@@ -58,9 +60,10 @@ func printUsage() {
 	fmt.Println("  validate-next --path <dir> [--check images|links|both]")
 	fmt.Println()
 	fmt.Println("FLAGS:")
-	fmt.Println("  -path <dir>    Project dir containing (or below) .pre-commit.json (default \".\")")
-	fmt.Println("  -check <what>  images | links | both (default \"both\")")
-	fmt.Println("  -h, -help      Show this help message")
+	fmt.Println("  -path <dir>      Project dir containing (or below) .pre-commit.json (default \".\")")
+	fmt.Println("  -check <what>    images | links | both (default \"both\")")
+	fmt.Println("  -locale-prefix   Treat a leading dynamic segment ([lang]) as optional for links")
+	fmt.Println("  -h, -help        Show this help message")
 	fmt.Println()
 	fmt.Println("Config: reads the nextImageCheck / nextLinkCheck blocks from .pre-commit.json.")
 	fmt.Println()
@@ -84,6 +87,12 @@ func run() int {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "validate-next: %v\n", err)
 		return 1
+	}
+
+	// -locale-prefix is an override-on for adhoc runs: enable the leading-
+	// dynamic-segment relaxation without editing .pre-commit.json.
+	if localePrefixFlag {
+		cfg.NextLinkCheck.LocalePrefix = true
 	}
 
 	failed := false

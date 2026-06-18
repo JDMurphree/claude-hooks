@@ -59,6 +59,51 @@ func TestCheckLinksStatic(t *testing.T) {
 	}
 }
 
+func TestCheckLinksLocalePrefix(t *testing.T) {
+	app := t.TempDir()
+	// Routes live under a leading [lang] locale segment + a (dashboard) group.
+	writeFile(t, filepath.Join(app, "app", "[lang]", "page.tsx"), "export default function P(){return null}")
+	writeFile(t, filepath.Join(app, "app", "[lang]", "(dashboard)", "badges", "collections", "page.tsx"), "export default function P(){return null}")
+	writeFile(t, filepath.Join(app, "app", "[lang]", "(dashboard)", "marketplace", "category", "[category]", "page.tsx"), "export default function P(){return null}")
+	// Links are written locale-less, the way i18n middleware expects.
+	writeFile(t, filepath.Join(app, "components", "nav.tsx"), `
+		import Link from "next/link";
+		export function Nav(){return (<>
+			<Link href="/">home</Link>
+			<Link href="/badges/collections">badges</Link>
+			<Link href="/marketplace/category/car">cat</Link>
+			<Link href="/totally/missing">dead</Link>
+		</>)}
+	`)
+
+	// Without LocalePrefix every locale-less link to a [lang]-prefixed route is
+	// a segment short → miss. (A single-segment link like "/x" is NOT a miss —
+	// it matches /[lang] with x treated as the locale.)
+	off, err := CheckLinks(app, LinkConfig{Mode: "static"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	offMisses := map[string]bool{}
+	for _, m := range off.Misses {
+		offMisses[m.Ref] = true
+	}
+	for _, ref := range []string{"/", "/badges/collections", "/marketplace/category/car", "/totally/missing"} {
+		if !offMisses[ref] {
+			t.Fatalf("LocalePrefix off: expected %q to be a miss; got %+v", ref, off.Misses)
+		}
+	}
+
+	// With LocalePrefix the leading [lang] is optional → real routes resolve,
+	// only the genuinely-missing /totally/missing remains.
+	on, err := CheckLinks(app, LinkConfig{Mode: "static", LocalePrefix: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(on.Misses) != 1 || on.Misses[0].Ref != "/totally/missing" {
+		t.Fatalf("LocalePrefix on: want exactly [/totally/missing]; got %+v", on.Misses)
+	}
+}
+
 func TestCrawlLinks(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

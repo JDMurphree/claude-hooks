@@ -207,11 +207,11 @@ func writeMockCheckReport(violations []Violation, baseDir string) error {
 
 		var sb strings.Builder
 		sb.WriteString(strings.Repeat("=", 80) + "\n")
-		sb.WriteString(fmt.Sprintf("MOCK CHECK VIOLATIONS - %s\n", strings.ToUpper(app)))
-		sb.WriteString(fmt.Sprintf("Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
+		fmt.Fprintf(&sb, "MOCK CHECK VIOLATIONS - %s\n", strings.ToUpper(app))
+		fmt.Fprintf(&sb, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 		sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
-		sb.WriteString(fmt.Sprintf("Total violations: %d\n\n", len(appViolations)))
+		fmt.Fprintf(&sb, "Total violations: %d\n\n", len(appViolations))
 
 		// Group by module within this app
 		byModule := make(map[string][]Violation)
@@ -224,9 +224,9 @@ func writeMockCheckReport(violations []Violation, baseDir string) error {
 		sb.WriteString(strings.Repeat("-", 40) + "\n\n")
 
 		for module, modViolations := range byModule {
-			sb.WriteString(fmt.Sprintf("\n%s (%d occurrences)\n", module, len(modViolations)))
+			fmt.Fprintf(&sb, "\n%s (%d occurrences)\n", module, len(modViolations))
 			for _, v := range modViolations {
-				sb.WriteString(fmt.Sprintf("  %s (line %d)\n", v.File, v.Line))
+				fmt.Fprintf(&sb, "  %s (line %d)\n", v.File, v.Line)
 			}
 		}
 
@@ -241,9 +241,9 @@ func writeMockCheckReport(violations []Violation, baseDir string) error {
 		}
 
 		for file, fileViolations := range byFile {
-			sb.WriteString(fmt.Sprintf("\n%s (%d violations)\n", file, len(fileViolations)))
+			fmt.Fprintf(&sb, "\n%s (%d violations)\n", file, len(fileViolations))
 			for _, v := range fileViolations {
-				sb.WriteString(fmt.Sprintf("  Line %d: jest.mock('%s', ...)\n", v.Line, v.Module))
+				fmt.Fprintf(&sb, "  Line %d: jest.mock('%s', ...)\n", v.Line, v.Module)
 			}
 		}
 

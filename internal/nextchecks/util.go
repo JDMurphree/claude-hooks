@@ -3,6 +3,7 @@ package nextchecks
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -21,6 +22,20 @@ var sourceExts = map[string]bool{
 	".ts": true, ".tsx": true, ".js": true, ".jsx": true, ".mjs": true, ".mdx": true,
 }
 
+// testFile matches co-located unit/spec files (foo.test.tsx, bar.spec.ts).
+var testFile = regexp.MustCompile(`\.(test|spec)\.[jt]sx?$`)
+
+// isTestArtifact reports whether a path is a test file or lives in a test/mock
+// fixture directory. These hold fake asset paths and link literals by design
+// (e.g. getMediaUrl({key:"/images/x.jpg"})), so the asset/link checkers skip
+// them — an asset referenced only in a test can't cause a production 404.
+func isTestArtifact(path string) bool {
+	if testFile.MatchString(path) {
+		return true
+	}
+	return strings.Contains(path, "/__tests__/") || strings.Contains(path, "/__mocks__/")
+}
+
 // dirExists reports whether path exists and is a directory.
 func dirExists(path string) bool {
 	info, err := os.Stat(path)
@@ -34,8 +49,8 @@ func fileExists(path string) bool {
 }
 
 // sourceFiles returns every source file under the given srcDirs (relative to
-// appPath), skipping node_modules/.next/.turbo and any path containing one of
-// excludePaths.
+// appPath), skipping node_modules/.next/.turbo, test artifacts (see
+// isTestArtifact), and any path containing one of excludePaths.
 func sourceFiles(appPath string, srcDirs, excludePaths []string) []string {
 	var out []string
 	for _, dir := range srcDirs {
@@ -55,6 +70,9 @@ func sourceFiles(appPath string, srcDirs, excludePaths []string) []string {
 				return nil
 			}
 			if !sourceExts[strings.ToLower(filepath.Ext(path))] {
+				return nil
+			}
+			if isTestArtifact(path) {
 				return nil
 			}
 			for _, ex := range excludePaths {

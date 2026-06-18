@@ -1,0 +1,1 @@
+fix(convex-gen): normalize namespaces to forward-slashes so Windows backslashes do not leak into generated identifiers

@@ -79,13 +79,13 @@ func writeTypecheckReport(appName, rawOutput string, allErrors, realErrors []tsE
 
 	var sb strings.Builder
 	sb.WriteString(strings.Repeat("=", 80) + "\n")
-	sb.WriteString(fmt.Sprintf("TYPECHECK REPORT: %s\n", appName))
-	sb.WriteString(fmt.Sprintf("Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
+	fmt.Fprintf(&sb, "TYPECHECK REPORT: %s\n", appName)
+	fmt.Fprintf(&sb, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 	sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
-	sb.WriteString(fmt.Sprintf("Total errors parsed: %d\n", len(allErrors)))
-	sb.WriteString(fmt.Sprintf("Errors after filtering: %d\n", len(realErrors)))
-	sb.WriteString(fmt.Sprintf("Filtered out: %d\n\n", len(allErrors)-len(realErrors)))
+	fmt.Fprintf(&sb, "Total errors parsed: %d\n", len(allErrors))
+	fmt.Fprintf(&sb, "Errors after filtering: %d\n", len(realErrors))
+	fmt.Fprintf(&sb, "Filtered out: %d\n\n", len(allErrors)-len(realErrors))
 
 	// Group errors by file
 	errorsByFile := make(map[string][]tsError)
@@ -103,7 +103,7 @@ func writeTypecheckReport(appName, rawOutput string, allErrors, realErrors []tsE
 	sb.WriteString("ERRORS BY CODE\n")
 	sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 	for code, count := range errorsByCode {
-		sb.WriteString(fmt.Sprintf("  %s: %d\n", code, count))
+		fmt.Fprintf(&sb, "  %s: %d\n", code, count)
 	}
 
 	sb.WriteString("\n" + strings.Repeat("=", 80) + "\n")
@@ -111,10 +111,10 @@ func writeTypecheckReport(appName, rawOutput string, allErrors, realErrors []tsE
 	sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
 	for file, errs := range errorsByFile {
-		sb.WriteString(fmt.Sprintf("\n%s (%d errors)\n", file, len(errs)))
+		fmt.Fprintf(&sb, "\n%s (%d errors)\n", file, len(errs))
 		sb.WriteString(strings.Repeat("-", 40) + "\n")
 		for _, e := range errs {
-			sb.WriteString(fmt.Sprintf("  [%s] %s\n", e.errorCode, e.fullText))
+			fmt.Fprintf(&sb, "  [%s] %s\n", e.errorCode, e.fullText)
 		}
 	}
 

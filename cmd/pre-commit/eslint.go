@@ -37,8 +37,8 @@ func writeLintReport(appName, linterName, rawOutput string, allErrors, realError
 
 	var sb strings.Builder
 	sb.WriteString(strings.Repeat("=", 80) + "\n")
-	sb.WriteString(fmt.Sprintf("LINT REPORT: %s\n", appName))
-	sb.WriteString(fmt.Sprintf("Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
+	fmt.Fprintf(&sb, "LINT REPORT: %s\n", appName)
+	fmt.Fprintf(&sb, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 	sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
 	// Count by severity
@@ -52,9 +52,9 @@ func writeLintReport(appName, linterName, rawOutput string, allErrors, realError
 		}
 	}
 
-	sb.WriteString(fmt.Sprintf("Total findings: %d (%d errors, %d warnings)\n", len(realErrors), errorCount, warningCount))
-	sb.WriteString(fmt.Sprintf("Total parsed: %d\n", len(allErrors)))
-	sb.WriteString(fmt.Sprintf("Filtered out: %d\n\n", len(allErrors)-len(realErrors)))
+	fmt.Fprintf(&sb, "Total findings: %d (%d errors, %d warnings)\n", len(realErrors), errorCount, warningCount)
+	fmt.Fprintf(&sb, "Total parsed: %d\n", len(allErrors))
+	fmt.Fprintf(&sb, "Filtered out: %d\n\n", len(allErrors)-len(realErrors))
 
 	// Group errors by file
 	errorsByFile := make(map[string][]lintError)
@@ -83,16 +83,16 @@ func writeLintReport(appName, linterName, rawOutput string, allErrors, realError
 		if fileWarnings > 0 {
 			severityParts = append(severityParts, fmt.Sprintf("%d warnings", fileWarnings))
 		}
-		sb.WriteString(fmt.Sprintf("\n%s (%s)\n", file, strings.Join(severityParts, ", ")))
+		fmt.Fprintf(&sb, "\n%s (%s)\n", file, strings.Join(severityParts, ", "))
 		sb.WriteString(strings.Repeat("-", 40) + "\n")
 		for _, e := range errs {
-			sb.WriteString(fmt.Sprintf("  Line %s:%s [%s] %s\n", e.line, e.column, e.rule, e.message))
+			fmt.Fprintf(&sb, "  Line %s:%s [%s] %s\n", e.line, e.column, e.rule, e.message)
 		}
 	}
 
 	// Also write raw output
 	sb.WriteString("\n\n" + strings.Repeat("=", 80) + "\n")
-	sb.WriteString(fmt.Sprintf("RAW %s OUTPUT\n", strings.ToUpper(linterName)))
+	fmt.Fprintf(&sb, "RAW %s OUTPUT\n", strings.ToUpper(linterName))
 	sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 	sb.WriteString(rawOutput)
 

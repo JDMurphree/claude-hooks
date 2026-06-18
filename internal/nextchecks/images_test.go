@@ -53,6 +53,29 @@ func TestCheckImages(t *testing.T) {
 	}
 }
 
+func TestCheckImagesSkipsTestFiles(t *testing.T) {
+	app := t.TempDir()
+	writeFile(t, filepath.Join(app, "public", "real.png"), "x")
+	// Real source references a real asset → OK.
+	writeFile(t, filepath.Join(app, "app", "page.tsx"), `<img src="/real.png"/>`)
+	// Test fixtures reference fake asset-looking paths by design. These must
+	// NOT be flagged — a path referenced only in a test can't 404 in prod.
+	writeFile(t, filepath.Join(app, "components", "url.test.ts"),
+		`expect(getCdnUrl("/images/photo.jpg")).toBe("https://cdn/images/photo.jpg");`)
+	writeFile(t, filepath.Join(app, "components", "card.spec.tsx"),
+		`render(<img src="/uploads/missing.jpg" />);`)
+	writeFile(t, filepath.Join(app, "components", "__mocks__", "media.ts"),
+		`export const fixture = "/mock/asset.png";`)
+
+	res, err := CheckImages(app, ImageConfig{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Misses) != 0 {
+		t.Fatalf("test artifacts must be skipped; got misses %+v", res.Misses)
+	}
+}
+
 func TestCheckImagesSkipsNonNext(t *testing.T) {
 	app := t.TempDir()
 	writeFile(t, filepath.Join(app, "app", "page.tsx"), `<img src="/x.png"/>`)

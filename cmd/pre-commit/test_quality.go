@@ -198,10 +198,10 @@ func writeTestQualityReport(violations []TestQualityViolation, baseDir string) e
 	var sb strings.Builder
 	sb.WriteString(strings.Repeat("=", 80) + "\n")
 	sb.WriteString("TEST QUALITY VIOLATIONS REPORT\n")
-	sb.WriteString(fmt.Sprintf("Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
+	fmt.Fprintf(&sb, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 	sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
-	sb.WriteString(fmt.Sprintf("Total export-only test stubs: %d\n\n", len(violations)))
+	fmt.Fprintf(&sb, "Total export-only test stubs: %d\n\n", len(violations))
 
 	// Group by app
 	appViolations := make(map[string][]TestQualityViolation)
@@ -214,10 +214,10 @@ func writeTestQualityReport(violations []TestQualityViolation, baseDir string) e
 	sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
 	for app, vs := range appViolations {
-		sb.WriteString(fmt.Sprintf("%s (%d files)\n", app, len(vs)))
+		fmt.Fprintf(&sb, "%s (%d files)\n", app, len(vs))
 		sb.WriteString(strings.Repeat("-", 40) + "\n")
 		for _, v := range vs {
-			sb.WriteString(fmt.Sprintf("  %s\n", v.FilePath))
+			fmt.Fprintf(&sb, "  %s\n", v.FilePath)
 		}
 		sb.WriteString("\n")
 	}

@@ -72,6 +72,9 @@ func checkLinksStatic(appPath string, cfg LinkConfig) (Result, error) {
 
 	routes := buildRouteSet(appDir)
 	routes = append(routes, parseRedirectSources(appPath)...)
+	if cfg.LocalePrefix {
+		routes = append(routes, stripLeadingDynamic(routes)...)
+	}
 
 	links := collectLinks(appPath, cfg)
 
@@ -137,6 +140,21 @@ func routeFromRel(rel string) (route, bool) {
 		}
 	}
 	return r, true
+}
+
+// stripLeadingDynamic returns locale-less variants of every route whose first
+// segment is dynamic (e.g. app/[lang]/badges -> /badges). i18n middleware
+// injects that leading segment at runtime, so links are written without it;
+// adding these variants lets locale-less links resolve. Only the single
+// leading dynamic segment is removed — nested dynamic segments are untouched.
+func stripLeadingDynamic(routes []route) []route {
+	var variants []route
+	for _, r := range routes {
+		if len(r) > 0 && r[0].kind == segDynamic {
+			variants = append(variants, append(route(nil), r[1:]...))
+		}
+	}
+	return variants
 }
 
 // parseRedirectSources best-effort extracts `source: "/..."` paths from a

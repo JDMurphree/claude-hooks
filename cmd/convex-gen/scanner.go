@@ -14,6 +14,17 @@ type ConvexFile struct {
 	FileName  string // File name without extension
 }
 
+// normalizeNamespace converts an OS-specific path into a forward-slash
+// delimited module namespace. filepath.Dir/Join emit the platform separator
+// (\ on Windows); downstream identifier builders split on "/", so a stray
+// backslash would otherwise leak into generated symbols (e.g.
+// "useChannels\channelActions"). filepath.ToSlash handles the host separator
+// and the explicit replace guards against any backslash that reaches here on
+// a non-Windows host, keeping namespaces '/'-delimited on every platform.
+func normalizeNamespace(p string) string {
+	return strings.ReplaceAll(filepath.ToSlash(p), `\`, "/")
+}
+
 // Scanner finds TypeScript files in Convex directory
 type Scanner struct {
 	config       *Config
@@ -124,6 +135,9 @@ func (s *Scanner) ScanConvexDirectory() ([]ConvexFile, error) {
 			// For nested structure, include filename in namespace path
 			namespace = filepath.Join(namespace, baseName)
 		}
+
+		// Namespaces are logical module paths, not OS paths — force '/'.
+		namespace = normalizeNamespace(namespace)
 
 		files = append(files, ConvexFile{
 			Path:      path,
@@ -237,6 +251,8 @@ func (s *Scanner) ScanSchemaFiles() ([]SchemaFile, error) {
 			domain = strings.TrimSuffix(info.Name(), ".ts")
 			domain = strings.TrimSuffix(domain, ".schema")
 		}
+		// Logical module path — force '/' so identifiers never carry a '\'.
+		domain = normalizeNamespace(domain)
 
 		files = append(files, SchemaFile{
 			Path:   path,

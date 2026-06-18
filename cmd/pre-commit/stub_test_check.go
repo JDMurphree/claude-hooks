@@ -324,10 +324,10 @@ func writeStubTestReport(stubs []string, projectRoot, baseDir string) error {
 
 		var sb strings.Builder
 		sb.WriteString(strings.Repeat("=", 80) + "\n")
-		sb.WriteString(fmt.Sprintf("STUB TESTS - %s\n", strings.ToUpper(app)))
-		sb.WriteString(fmt.Sprintf("Generated: %s\n", generated))
+		fmt.Fprintf(&sb, "STUB TESTS - %s\n", strings.ToUpper(app))
+		fmt.Fprintf(&sb, "Generated: %s\n", generated)
 		sb.WriteString(strings.Repeat("=", 80) + "\n\n")
-		sb.WriteString(fmt.Sprintf("Total stub test files: %d\n\n", len(files)))
+		fmt.Fprintf(&sb, "Total stub test files: %d\n\n", len(files))
 		sb.WriteString("A stub test is a file where every expect() call is a weak-only\n")
 		sb.WriteString("assertion (expect(true).toBe(true), .toBeDefined(), .toBeTruthy(),\n")
 		sb.WriteString(".toBeFalsy(), .not.toBeNull(), .not.toBeUndefined()) or a self-mock\n")
@@ -336,7 +336,7 @@ func writeStubTestReport(stubs []string, projectRoot, baseDir string) error {
 		sb.WriteString("STUB FILES\n")
 		sb.WriteString(strings.Repeat("-", 40) + "\n\n")
 		for _, f := range files {
-			sb.WriteString(fmt.Sprintf("  %s\n", f))
+			fmt.Fprintf(&sb, "  %s\n", f)
 		}
 
 		reportPath := filepath.Join(outDir, app+".txt")

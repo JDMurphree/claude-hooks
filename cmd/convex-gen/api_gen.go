@@ -121,10 +121,10 @@ func (g *APIGenerator) generateAPIIndexFile(files []string) error {
 	sb.WriteString("/**\n")
 	sb.WriteString(" * AUTO-GENERATED INDEX - DO NOT EDIT\n")
 	sb.WriteString(" */\n\n")
-	sb.WriteString(fmt.Sprintf("export { api } from '%s';\n", g.config.Imports.API))
+	fmt.Fprintf(&sb, "export { api } from '%s';\n", g.config.Imports.API)
 
 	for _, file := range files {
-		sb.WriteString(fmt.Sprintf("export * from './%s';\n", file))
+		fmt.Fprintf(&sb, "export * from './%s';\n", file)
 	}
 
 	return os.WriteFile(filepath.Join(g.outputDir, "index.ts"), []byte(sb.String()), 0644)
@@ -173,7 +173,7 @@ func (g *APIGenerator) generateGroupedAPIFileContent(topNamespace string, funcs 
 
 	// Header
 	sb.WriteString("/**\n")
-	sb.WriteString(fmt.Sprintf(" * %s API References\n", capitalize(topNamespace)))
+	fmt.Fprintf(&sb, " * %s API References\n", capitalize(topNamespace))
 	sb.WriteString(" * Auto-generated from Convex backend functions\n")
 	sb.WriteString(" *\n")
 	sb.WriteString(" * DO NOT EDIT MANUALLY\n")
@@ -182,7 +182,7 @@ func (g *APIGenerator) generateGroupedAPIFileContent(topNamespace string, funcs 
 
 	// Imports
 	sb.WriteString("import type { FunctionReference } from 'convex/server';\n")
-	sb.WriteString(fmt.Sprintf("import { api } from '%s';\n\n", g.config.Imports.API))
+	fmt.Fprintf(&sb, "import { api } from '%s';\n\n", g.config.Imports.API)
 
 	// Group by type
 	var queries, mutations, actions []ConvexFunction
@@ -203,11 +203,11 @@ func (g *APIGenerator) generateGroupedAPIFileContent(topNamespace string, funcs 
 	// Generate queries export
 	if len(queries) > 0 {
 		seenNames := make(map[string]bool)
-		sb.WriteString(fmt.Sprintf("export const %sQueries: Record<string, FunctionReference<\"query\">> = {\n", baseName))
+		fmt.Fprintf(&sb, "export const %sQueries: Record<string, FunctionReference<\"query\">> = {\n", baseName)
 		for _, fn := range queries {
 			apiPath := toApiPath(fn.Namespace, fn.Name)
 			exportName := getUniqueExportName(fn, topNamespace, seenNames)
-			sb.WriteString(fmt.Sprintf("  %s: %s as unknown as FunctionReference<\"query\">,\n", exportName, apiPath))
+			fmt.Fprintf(&sb, "  %s: %s as unknown as FunctionReference<\"query\">,\n", exportName, apiPath)
 		}
 		sb.WriteString("};\n\n")
 	}
@@ -215,11 +215,11 @@ func (g *APIGenerator) generateGroupedAPIFileContent(topNamespace string, funcs 
 	// Generate mutations export
 	if len(mutations) > 0 {
 		seenNames := make(map[string]bool)
-		sb.WriteString(fmt.Sprintf("export const %sMutations: Record<string, FunctionReference<\"mutation\">> = {\n", baseName))
+		fmt.Fprintf(&sb, "export const %sMutations: Record<string, FunctionReference<\"mutation\">> = {\n", baseName)
 		for _, fn := range mutations {
 			apiPath := toApiPath(fn.Namespace, fn.Name)
 			exportName := getUniqueExportName(fn, topNamespace, seenNames)
-			sb.WriteString(fmt.Sprintf("  %s: %s as unknown as FunctionReference<\"mutation\">,\n", exportName, apiPath))
+			fmt.Fprintf(&sb, "  %s: %s as unknown as FunctionReference<\"mutation\">,\n", exportName, apiPath)
 		}
 		sb.WriteString("};\n\n")
 	}
@@ -227,11 +227,11 @@ func (g *APIGenerator) generateGroupedAPIFileContent(topNamespace string, funcs 
 	// Generate actions export
 	if len(actions) > 0 {
 		seenNames := make(map[string]bool)
-		sb.WriteString(fmt.Sprintf("export const %sActions: Record<string, FunctionReference<\"action\">> = {\n", baseName))
+		fmt.Fprintf(&sb, "export const %sActions: Record<string, FunctionReference<\"action\">> = {\n", baseName)
 		for _, fn := range actions {
 			apiPath := toApiPath(fn.Namespace, fn.Name)
 			exportName := getUniqueExportName(fn, topNamespace, seenNames)
-			sb.WriteString(fmt.Sprintf("  %s: %s as unknown as FunctionReference<\"action\">,\n", exportName, apiPath))
+			fmt.Fprintf(&sb, "  %s: %s as unknown as FunctionReference<\"action\">,\n", exportName, apiPath)
 		}
 		sb.WriteString("};\n\n")
 	}
@@ -245,7 +245,7 @@ func (g *APIGenerator) generateAPIFileContent(namespace string, funcs []ConvexFu
 
 	// Header
 	sb.WriteString("/**\n")
-	sb.WriteString(fmt.Sprintf(" * %s API References\n", capitalize(namespace)))
+	fmt.Fprintf(&sb, " * %s API References\n", capitalize(namespace))
 	sb.WriteString(" * Auto-generated from Convex backend functions\n")
 	sb.WriteString(" *\n")
 	sb.WriteString(" * DO NOT EDIT MANUALLY\n")
@@ -254,7 +254,7 @@ func (g *APIGenerator) generateAPIFileContent(namespace string, funcs []ConvexFu
 
 	// Imports
 	sb.WriteString("import type { FunctionReference } from 'convex/server';\n")
-	sb.WriteString(fmt.Sprintf("import { api } from '%s';\n\n", g.config.Imports.API))
+	fmt.Fprintf(&sb, "import { api } from '%s';\n\n", g.config.Imports.API)
 
 	// Group by type
 	var queries, mutations, actions []ConvexFunction
@@ -274,30 +274,30 @@ func (g *APIGenerator) generateAPIFileContent(namespace string, funcs []ConvexFu
 
 	// Generate queries export
 	if len(queries) > 0 {
-		sb.WriteString(fmt.Sprintf("export const %sQueries: Record<string, FunctionReference<\"query\">> = {\n", baseName))
+		fmt.Fprintf(&sb, "export const %sQueries: Record<string, FunctionReference<\"query\">> = {\n", baseName)
 		for _, fn := range queries {
 			apiPath := toApiPath(namespace, fn.Name)
-			sb.WriteString(fmt.Sprintf("  %s: %s as unknown as FunctionReference<\"query\">,\n", fn.Name, apiPath))
+			fmt.Fprintf(&sb, "  %s: %s as unknown as FunctionReference<\"query\">,\n", fn.Name, apiPath)
 		}
 		sb.WriteString("};\n\n")
 	}
 
 	// Generate mutations export
 	if len(mutations) > 0 {
-		sb.WriteString(fmt.Sprintf("export const %sMutations: Record<string, FunctionReference<\"mutation\">> = {\n", baseName))
+		fmt.Fprintf(&sb, "export const %sMutations: Record<string, FunctionReference<\"mutation\">> = {\n", baseName)
 		for _, fn := range mutations {
 			apiPath := toApiPath(namespace, fn.Name)
-			sb.WriteString(fmt.Sprintf("  %s: %s as unknown as FunctionReference<\"mutation\">,\n", fn.Name, apiPath))
+			fmt.Fprintf(&sb, "  %s: %s as unknown as FunctionReference<\"mutation\">,\n", fn.Name, apiPath)
 		}
 		sb.WriteString("};\n\n")
 	}
 
 	// Generate actions export
 	if len(actions) > 0 {
-		sb.WriteString(fmt.Sprintf("export const %sActions: Record<string, FunctionReference<\"action\">> = {\n", baseName))
+		fmt.Fprintf(&sb, "export const %sActions: Record<string, FunctionReference<\"action\">> = {\n", baseName)
 		for _, fn := range actions {
 			apiPath := toApiPath(namespace, fn.Name)
-			sb.WriteString(fmt.Sprintf("  %s: %s as unknown as FunctionReference<\"action\">,\n", fn.Name, apiPath))
+			fmt.Fprintf(&sb, "  %s: %s as unknown as FunctionReference<\"action\">,\n", fn.Name, apiPath)
 		}
 		sb.WriteString("};\n\n")
 	}
@@ -307,14 +307,16 @@ func (g *APIGenerator) generateAPIFileContent(namespace string, funcs []ConvexFu
 
 // apiNamespaceToFileName converts namespace to filename
 func apiNamespaceToFileName(namespace string) string {
-	// Convert "events/voting" to "events-voting"
-	return strings.ReplaceAll(namespace, string(filepath.Separator), "-")
+	// Convert "events/voting" to "events-voting". Namespaces are always
+	// '/'-delimited logical module paths (see normalizeNamespace), never OS
+	// paths, so split on "/" rather than filepath.Separator.
+	return strings.ReplaceAll(namespace, "/", "-")
 }
 
 // apiNamespaceToExportName converts namespace to export name
 func apiNamespaceToExportName(namespace string) string {
 	// Convert "events/voting" to "EventsVoting"
-	parts := strings.Split(namespace, string(filepath.Separator))
+	parts := strings.Split(namespace, "/")
 	for i, part := range parts {
 		parts[i] = capitalize(part)
 	}

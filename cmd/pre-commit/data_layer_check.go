@@ -212,20 +212,20 @@ func writeDataLayerCheckReport(violations []DataLayerViolation, baseDir string) 
 
 		var sb strings.Builder
 		sb.WriteString(strings.Repeat("=", 80) + "\n")
-		sb.WriteString(fmt.Sprintf("DATA LAYER IMPORT VIOLATIONS - %s\n", strings.ToUpper(app)))
-		sb.WriteString(fmt.Sprintf("Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
+		fmt.Fprintf(&sb, "DATA LAYER IMPORT VIOLATIONS - %s\n", strings.ToUpper(app))
+		fmt.Fprintf(&sb, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 		sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
-		sb.WriteString(fmt.Sprintf("Total violations: %d\n\n", len(appViolations)))
+		fmt.Fprintf(&sb, "Total violations: %d\n\n", len(appViolations))
 
 		sb.WriteString(strings.Repeat("-", 40) + "\n")
 		sb.WriteString("FILES WITH DIRECT CONVEX IMPORTS\n")
 		sb.WriteString(strings.Repeat("-", 40) + "\n\n")
 
 		for _, v := range appViolations {
-			sb.WriteString(fmt.Sprintf("  %s\n", v.File))
+			fmt.Fprintf(&sb, "  %s\n", v.File)
 			for _, p := range v.Patterns {
-				sb.WriteString(fmt.Sprintf("    matched: %s\n", p))
+				fmt.Fprintf(&sb, "    matched: %s\n", p)
 			}
 		}
 

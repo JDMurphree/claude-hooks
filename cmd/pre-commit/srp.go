@@ -374,12 +374,12 @@ func writeSRPReport(errors, warnings []SRPViolation, baseDir string) error {
 
 		var sb strings.Builder
 		sb.WriteString(strings.Repeat("=", 80) + "\n")
-		sb.WriteString(fmt.Sprintf("SRP ANALYSIS - %s\n", strings.ToUpper(app)))
-		sb.WriteString(fmt.Sprintf("Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
+		fmt.Fprintf(&sb, "SRP ANALYSIS - %s\n", strings.ToUpper(app))
+		fmt.Fprintf(&sb, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 		sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
-		sb.WriteString(fmt.Sprintf("Total errors: %d\n", len(appErrors)))
-		sb.WriteString(fmt.Sprintf("Total warnings: %d\n\n", len(appWarnings)))
+		fmt.Fprintf(&sb, "Total errors: %d\n", len(appErrors))
+		fmt.Fprintf(&sb, "Total warnings: %d\n\n", len(appWarnings))
 
 		// Group errors by type within this app
 		if len(appErrors) > 0 {
@@ -393,9 +393,9 @@ func writeSRPReport(errors, warnings []SRPViolation, baseDir string) error {
 			sb.WriteString(strings.Repeat("-", 40) + "\n\n")
 
 			for msgType, errs := range errorsByType {
-				sb.WriteString(fmt.Sprintf("\n%s (%d occurrences)\n", msgType, len(errs)))
+				fmt.Fprintf(&sb, "\n%s (%d occurrences)\n", msgType, len(errs))
 				for _, e := range errs {
-					sb.WriteString(fmt.Sprintf("  %s\n", e.File))
+					fmt.Fprintf(&sb, "  %s\n", e.File)
 				}
 			}
 		}
@@ -412,9 +412,9 @@ func writeSRPReport(errors, warnings []SRPViolation, baseDir string) error {
 			sb.WriteString(strings.Repeat("-", 40) + "\n\n")
 
 			for msgType, warns := range warningsByType {
-				sb.WriteString(fmt.Sprintf("\n%s (%d occurrences)\n", msgType, len(warns)))
+				fmt.Fprintf(&sb, "\n%s (%d occurrences)\n", msgType, len(warns))
 				for _, w := range warns {
-					sb.WriteString(fmt.Sprintf("  %s\n", w.File))
+					fmt.Fprintf(&sb, "  %s\n", w.File)
 				}
 			}
 		}
@@ -433,15 +433,15 @@ func writeSRPReport(errors, warnings []SRPViolation, baseDir string) error {
 		}
 
 		for file, violations := range allByFile {
-			sb.WriteString(fmt.Sprintf("\n%s (%d issues)\n", file, len(violations)))
+			fmt.Fprintf(&sb, "\n%s (%d issues)\n", file, len(violations))
 			for _, v := range violations {
 				prefix := "❌"
 				if v.Severity == "warning" {
 					prefix = "⚠️"
 				}
-				sb.WriteString(fmt.Sprintf("  %s %s\n", prefix, v.Message))
+				fmt.Fprintf(&sb, "  %s %s\n", prefix, v.Message)
 				if v.Suggestion != "" {
-					sb.WriteString(fmt.Sprintf("     → %s\n", v.Suggestion))
+					fmt.Fprintf(&sb, "     → %s\n", v.Suggestion)
 				}
 			}
 		}

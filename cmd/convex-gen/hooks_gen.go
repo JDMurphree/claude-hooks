@@ -188,8 +188,8 @@ func (g *HooksGenerator) generateSplitHookFileContent(topNamespace, fullNamespac
 
 	// Header
 	sb.WriteString("/**\n")
-	sb.WriteString(fmt.Sprintf(" * AUTO-GENERATED %s HOOKS - DO NOT EDIT\n", strings.ToUpper(funcType)))
-	sb.WriteString(fmt.Sprintf(" * Namespace: %s\n", fullNamespace))
+	fmt.Fprintf(&sb, " * AUTO-GENERATED %s HOOKS - DO NOT EDIT\n", strings.ToUpper(funcType))
+	fmt.Fprintf(&sb, " * Namespace: %s\n", fullNamespace)
 	sb.WriteString(" *\n")
 	sb.WriteString(" * Run 'convex-gen' to regenerate this file.\n")
 	sb.WriteString(" */\n\n")
@@ -237,10 +237,10 @@ func (g *HooksGenerator) generateSplitHookFileContent(topNamespace, fullNamespac
 		sb.WriteString("import { useAction } from 'convex/react';\n")
 	}
 
-	sb.WriteString(fmt.Sprintf("import { api } from '%s';\n", g.config.Imports.API))
+	fmt.Fprintf(&sb, "import { api } from '%s';\n", g.config.Imports.API)
 
 	if needsId {
-		sb.WriteString(fmt.Sprintf("import type { Id } from '%s';\n", g.config.Imports.DataModel))
+		fmt.Fprintf(&sb, "import type { Id } from '%s';\n", g.config.Imports.DataModel)
 	}
 	if needsFunctionArgs {
 		sb.WriteString("import type { FunctionArgs } from 'convex/server';\n")
@@ -308,7 +308,7 @@ func (g *HooksGenerator) generateGroupedHookFileContent(topNamespace string, fun
 
 	// Header
 	sb.WriteString("/**\n")
-	sb.WriteString(fmt.Sprintf(" * %s %s Hooks\n", capitalize(topNamespace), capitalize(funcType)))
+	fmt.Fprintf(&sb, " * %s %s Hooks\n", capitalize(topNamespace), capitalize(funcType))
 	sb.WriteString(" * Auto-generated React query hooks for Convex functions\n")
 	sb.WriteString(" *\n")
 	sb.WriteString(" * ⚠️ DO NOT EDIT MANUALLY - Run 'npm run generate:hooks' to regenerate\n")
@@ -366,10 +366,10 @@ func (g *HooksGenerator) generateGroupedHookFileContent(topNamespace string, fun
 	}
 
 	// API import - use configured path
-	sb.WriteString(fmt.Sprintf("import { api } from \"%s\";\n", g.config.Imports.API))
+	fmt.Fprintf(&sb, "import { api } from \"%s\";\n", g.config.Imports.API)
 
 	if needsId {
-		sb.WriteString(fmt.Sprintf("import type { Id } from \"%s\";\n", g.config.Imports.DataModel))
+		fmt.Fprintf(&sb, "import type { Id } from \"%s\";\n", g.config.Imports.DataModel)
 	}
 	if needsFunctionArgs {
 		sb.WriteString("import type { FunctionArgs } from \"convex/server\";\n")
@@ -396,7 +396,7 @@ func (g *HooksGenerator) generateGroupedHookFileContent(topNamespace string, fun
 		} else {
 			funcTypeLabel += "S"
 		}
-		sb.WriteString(fmt.Sprintf("// ============= %s %s =============\n\n", sectionName, funcTypeLabel))
+		fmt.Fprintf(&sb, "// ============= %s %s =============\n\n", sectionName, funcTypeLabel)
 
 		// Generate hooks for this sub-namespace
 		for _, fn := range subFuncs {
@@ -453,22 +453,22 @@ func (g *HooksGenerator) generateHook(topNamespace string, fn ConvexFunction, co
 
 	// JSDoc
 	sb.WriteString("/**\n")
-	sb.WriteString(fmt.Sprintf(" * Hook to %s\n", toNaturalLanguage(fn.Name)))
+	fmt.Fprintf(&sb, " * Hook to %s\n", toNaturalLanguage(fn.Name))
 
 	if len(fn.Args) > 0 && fn.Type == FunctionTypeQuery {
 		sb.WriteString(" *\n")
 		for _, arg := range fn.Args {
 			if arg.TableName != "" {
 				if arg.Optional {
-					sb.WriteString(fmt.Sprintf(" * @param %s - ID of %s (optional)\n", arg.Name, arg.TableName))
+					fmt.Fprintf(&sb, " * @param %s - ID of %s (optional)\n", arg.Name, arg.TableName)
 				} else {
-					sb.WriteString(fmt.Sprintf(" * @param %s - ID of %s\n", arg.Name, arg.TableName))
+					fmt.Fprintf(&sb, " * @param %s - ID of %s\n", arg.Name, arg.TableName)
 				}
 			} else {
 				if arg.Optional {
-					sb.WriteString(fmt.Sprintf(" * @param %s - %s value (optional)\n", arg.Name, arg.Type))
+					fmt.Fprintf(&sb, " * @param %s - %s value (optional)\n", arg.Name, arg.Type)
 				} else {
-					sb.WriteString(fmt.Sprintf(" * @param %s - %s value\n", arg.Name, arg.Type))
+					fmt.Fprintf(&sb, " * @param %s - %s value\n", arg.Name, arg.Type)
 				}
 			}
 		}
@@ -502,7 +502,7 @@ func (g *HooksGenerator) generateHook(topNamespace string, fn ConvexFunction, co
 	// "" when their flag is disabled, preserving the historical untyped output.
 	returnAnnotation := g.generateReturnAnnotation(fn, apiPath)
 	argsAnnotation := g.generateArgsAnnotation(fn, apiPath)
-	sb.WriteString(fmt.Sprintf("export function %s(%s)%s%s {\n", hookName, params, returnAnnotation, argsAnnotation))
+	fmt.Fprintf(&sb, "export function %s(%s)%s%s {\n", hookName, params, returnAnnotation, argsAnnotation)
 
 	// Add @ts-ignore comment for deep type issues
 	sb.WriteString("  // @ts-ignore - TS2589: Deep type instantiation with nested API path\n")
@@ -530,22 +530,22 @@ func (g *HooksGenerator) generateSplitHook(topNamespace string, fn ConvexFunctio
 
 	// JSDoc
 	sb.WriteString("/**\n")
-	sb.WriteString(fmt.Sprintf(" * Hook to %s\n", toNaturalLanguage(fn.Name)))
+	fmt.Fprintf(&sb, " * Hook to %s\n", toNaturalLanguage(fn.Name))
 
 	if len(fn.Args) > 0 && fn.Type == FunctionTypeQuery {
 		sb.WriteString(" *\n")
 		for _, arg := range fn.Args {
 			if arg.TableName != "" {
 				if arg.Optional {
-					sb.WriteString(fmt.Sprintf(" * @param %s - ID of %s (optional)\n", arg.Name, arg.TableName))
+					fmt.Fprintf(&sb, " * @param %s - ID of %s (optional)\n", arg.Name, arg.TableName)
 				} else {
-					sb.WriteString(fmt.Sprintf(" * @param %s - ID of %s\n", arg.Name, arg.TableName))
+					fmt.Fprintf(&sb, " * @param %s - ID of %s\n", arg.Name, arg.TableName)
 				}
 			} else {
 				if arg.Optional {
-					sb.WriteString(fmt.Sprintf(" * @param %s - %s value (optional)\n", arg.Name, arg.Type))
+					fmt.Fprintf(&sb, " * @param %s - %s value (optional)\n", arg.Name, arg.Type)
 				} else {
-					sb.WriteString(fmt.Sprintf(" * @param %s - %s value\n", arg.Name, arg.Type))
+					fmt.Fprintf(&sb, " * @param %s - %s value\n", arg.Name, arg.Type)
 				}
 			}
 		}
@@ -579,7 +579,7 @@ func (g *HooksGenerator) generateSplitHook(topNamespace string, fn ConvexFunctio
 	// "" when their flag is disabled, preserving the historical untyped output.
 	returnAnnotation := g.generateReturnAnnotation(fn, apiPath)
 	argsAnnotation := g.generateArgsAnnotation(fn, apiPath)
-	sb.WriteString(fmt.Sprintf("export function %s(%s)%s%s {\n", hookName, params, returnAnnotation, argsAnnotation))
+	fmt.Fprintf(&sb, "export function %s(%s)%s%s {\n", hookName, params, returnAnnotation, argsAnnotation)
 
 	// Add @ts-ignore comment for deep type issues
 	sb.WriteString("  // @ts-ignore - TS2589: Deep type instantiation with nested API path\n")
@@ -738,24 +738,24 @@ func (g *HooksGenerator) generateHookBodyV2(fn ConvexFunction, apiPath string) s
 		if fn.UseFunctionArgs {
 			if fn.IsPaginated {
 				sb.WriteString("  return usePaginatedQuery(\n")
-				sb.WriteString(fmt.Sprintf("    %s,\n", apiPath))
+				fmt.Fprintf(&sb, "    %s,\n", apiPath)
 				sb.WriteString("    args ?? \"skip\",\n")
 				sb.WriteString("    { initialNumItems: options?.initialNumItems || 20 }\n")
 				sb.WriteString("  );\n")
 			} else {
-				sb.WriteString(fmt.Sprintf("  return useQuery(%s, args ?? \"skip\");\n", apiPath))
+				fmt.Fprintf(&sb, "  return useQuery(%s, args ?? \"skip\");\n", apiPath)
 			}
 		} else if fn.IsPaginated {
 			hasRequiredSkippable := hasRequiredSkippableArg(fn.Args)
 			sb.WriteString("  return usePaginatedQuery(\n")
-			sb.WriteString(fmt.Sprintf("    %s,\n", apiPath))
+			fmt.Fprintf(&sb, "    %s,\n", apiPath)
 			if hasRequiredSkippable {
 				sb.WriteString(g.generateArgsWithSpread(fn.Args, false))
 			} else {
 				// Wrap args in shouldSkip check via options
 				argsLine := g.generateArgsWithSpread(fn.Args, false)
 				trimmed := strings.TrimSuffix(strings.TrimPrefix(argsLine, "    "), ",\n")
-				sb.WriteString(fmt.Sprintf("    options?.shouldSkip ? \"skip\" : %s,\n", trimmed))
+				fmt.Fprintf(&sb, "    options?.shouldSkip ? \"skip\" : %s,\n", trimmed)
 			}
 			sb.WriteString("    { initialNumItems: options?.initialNumItems || 20 }\n")
 			sb.WriteString("  );\n")
@@ -766,17 +766,17 @@ func (g *HooksGenerator) generateHookBodyV2(fn ConvexFunction, apiPath string) s
 			// `as any` return cast (used to swallow TS2589 deep-instantiation noise
 			// during inference) is no longer needed and would erase the real type.
 			if needsAsAnyCast && !g.config.DataLayer.TypedReturns {
-				sb.WriteString(fmt.Sprintf("  return useQuery(%s, %s) as any;\n", apiPath, argsExpr))
+				fmt.Fprintf(&sb, "  return useQuery(%s, %s) as any;\n", apiPath, argsExpr)
 			} else {
-				sb.WriteString(fmt.Sprintf("  return useQuery(%s, %s);\n", apiPath, argsExpr))
+				fmt.Fprintf(&sb, "  return useQuery(%s, %s);\n", apiPath, argsExpr)
 			}
 		}
 
 	case FunctionTypeMutation:
-		sb.WriteString(fmt.Sprintf("  return useMutation(%s);\n", apiPath))
+		fmt.Fprintf(&sb, "  return useMutation(%s);\n", apiPath)
 
 	case FunctionTypeAction:
-		sb.WriteString(fmt.Sprintf("  return useAction(%s);\n", apiPath))
+		fmt.Fprintf(&sb, "  return useAction(%s);\n", apiPath)
 	}
 
 	return sb.String()

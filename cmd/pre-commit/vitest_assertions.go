@@ -173,19 +173,19 @@ func writeVitestAssertionsReport(violations []VitestAssertionViolation, baseDir 
 	var sb strings.Builder
 	sb.WriteString(strings.Repeat("=", 80) + "\n")
 	sb.WriteString("VITEST ASSERTIONS VIOLATIONS REPORT\n")
-	sb.WriteString(fmt.Sprintf("Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
+	fmt.Fprintf(&sb, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 	sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
-	sb.WriteString(fmt.Sprintf("Total violations: %d\n\n", len(violations)))
+	fmt.Fprintf(&sb, "Total violations: %d\n\n", len(violations))
 
 	sb.WriteString(strings.Repeat("=", 80) + "\n")
 	sb.WriteString("APPS MISSING requireAssertions: true\n")
 	sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
 	for _, v := range violations {
-		sb.WriteString(fmt.Sprintf("%s\n", v.AppName))
-		sb.WriteString(fmt.Sprintf("  Config: %s\n", v.ConfigPath))
-		sb.WriteString(fmt.Sprintf("  Issue: %s\n\n", v.Message))
+		fmt.Fprintf(&sb, "%s\n", v.AppName)
+		fmt.Fprintf(&sb, "  Config: %s\n", v.ConfigPath)
+		fmt.Fprintf(&sb, "  Issue: %s\n\n", v.Message)
 	}
 
 	sb.WriteString(strings.Repeat("=", 80) + "\n")

@@ -244,10 +244,10 @@ func writeTestCoverageReport(violations []TestCoverageViolation, baseDir string)
 	var sb strings.Builder
 	sb.WriteString(strings.Repeat("=", 80) + "\n")
 	sb.WriteString("TEST COVERAGE VIOLATIONS REPORT\n")
-	sb.WriteString(fmt.Sprintf("Generated: %s\n", time.Now().Format("2006-01-02 15:04:05")))
+	fmt.Fprintf(&sb, "Generated: %s\n", time.Now().Format("2006-01-02 15:04:05"))
 	sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
-	sb.WriteString(fmt.Sprintf("Total files missing tests: %d\n\n", len(violations)))
+	fmt.Fprintf(&sb, "Total files missing tests: %d\n\n", len(violations))
 
 	// Group by app
 	byApp := make(map[string][]TestCoverageViolation)
@@ -260,7 +260,7 @@ func writeTestCoverageReport(violations []TestCoverageViolation, baseDir string)
 	sb.WriteString(strings.Repeat("=", 80) + "\n\n")
 
 	for appPath, appViolations := range byApp {
-		sb.WriteString(fmt.Sprintf("\n%s (%d files)\n", appPath, len(appViolations)))
+		fmt.Fprintf(&sb, "\n%s (%d files)\n", appPath, len(appViolations))
 		sb.WriteString(strings.Repeat("-", 40) + "\n")
 
 		// Group by folder within app
@@ -270,12 +270,12 @@ func writeTestCoverageReport(violations []TestCoverageViolation, baseDir string)
 		}
 
 		for folder, folderViolations := range byFolder {
-			sb.WriteString(fmt.Sprintf("\n  %s/ (%d files)\n", folder, len(folderViolations)))
+			fmt.Fprintf(&sb, "\n  %s/ (%d files)\n", folder, len(folderViolations))
 			for _, v := range folderViolations {
 				relSource, _ := filepath.Rel(".", v.SourceFile)
 				relTest, _ := filepath.Rel(".", v.ExpectedTestFile)
-				sb.WriteString(fmt.Sprintf("    %s\n", relSource))
-				sb.WriteString(fmt.Sprintf("      → expected: %s\n", relTest))
+				fmt.Fprintf(&sb, "    %s\n", relSource)
+				fmt.Fprintf(&sb, "      → expected: %s\n", relTest)
 			}
 		}
 	}

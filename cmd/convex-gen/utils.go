@@ -42,7 +42,7 @@ func generateIndexFile(dir string, files []string) error {
 	sb.WriteString(" */\n\n")
 
 	for _, file := range files {
-		sb.WriteString(fmt.Sprintf("export * from './%s';\n", file))
+		fmt.Fprintf(&sb, "export * from './%s';\n", file)
 	}
 
 	return os.WriteFile(filepath.Join(dir, "index.ts"), []byte(sb.String()), 0644)

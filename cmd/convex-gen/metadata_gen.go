@@ -80,8 +80,8 @@ func (g *MetadataGenerator) generateMetadataContent(tables []TableInfo) string {
 	// SCHEMA_METADATA record
 	sb.WriteString("export const SCHEMA_METADATA: Record<string, TableMetadata> = {\n")
 	for _, table := range tables {
-		sb.WriteString(fmt.Sprintf("  %s: {\n", table.Name))
-		sb.WriteString(fmt.Sprintf("    name: \"%s\",\n", table.Name))
+		fmt.Fprintf(&sb, "  %s: {\n", table.Name)
+		fmt.Fprintf(&sb, "    name: \"%s\",\n", table.Name)
 		sb.WriteString("    fields: [\n")
 		for _, field := range table.Fields {
 			sb.WriteString("      ")
@@ -96,7 +96,7 @@ func (g *MetadataGenerator) generateMetadataContent(tables []TableInfo) string {
 	// TABLE_NAMES const array
 	sb.WriteString("export const TABLE_NAMES = [\n")
 	for _, table := range tables {
-		sb.WriteString(fmt.Sprintf("  \"%s\",\n", table.Name))
+		fmt.Fprintf(&sb, "  \"%s\",\n", table.Name)
 	}
 	sb.WriteString("] as const;\n\n")
 
