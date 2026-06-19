@@ -20,11 +20,11 @@ import (
 // fixture describes a virtual project tree to materialize on disk for testing.
 type fixture struct {
 	name           string
-	convexPath     string                  // relative path under tmp dir, e.g. "packages/convex/convex"
-	dataLayerPath  string                  // relative path under tmp dir, e.g. "packages/data-layer/src"
-	fileStructure  string                  // "grouped" or "split"
-	validatorFiles map[string]string       // map of relative path → file content
-	functionFiles  map[string]string       // map of relative path → file content
+	convexPath     string            // relative path under tmp dir, e.g. "packages/convex/convex"
+	dataLayerPath  string            // relative path under tmp dir, e.g. "packages/data-layer/src"
+	fileStructure  string            // "grouped" or "split"
+	validatorFiles map[string]string // map of relative path → file content
+	functionFiles  map[string]string // map of relative path → file content
 }
 
 // build materializes the fixture inside tmpDir and returns a fully populated

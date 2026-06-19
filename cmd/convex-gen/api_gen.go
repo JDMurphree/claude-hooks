@@ -316,7 +316,7 @@ func apiNamespaceToFileName(namespace string) string {
 // apiNamespaceToExportName converts namespace to export name
 func apiNamespaceToExportName(namespace string) string {
 	// Convert "events/voting" to "EventsVoting"
-	parts := strings.Split(namespace, "/")
+	parts := splitNamespace(namespace)
 	for i, part := range parts {
 		parts[i] = capitalize(part)
 	}

@@ -59,8 +59,7 @@ func capitalize(s string) string {
 // namespaceToFileName converts namespace to hook filename
 func namespaceToFileName(namespace string) string {
 	// Convert "events/voting" to "useEvents_Voting"
-	// Always split on "/" — Convex namespaces use forward slashes on all platforms.
-	parts := strings.Split(namespace, "/")
+	parts := splitNamespace(namespace)
 	for i, part := range parts {
 		parts[i] = capitalize(part)
 	}
@@ -70,7 +69,6 @@ func namespaceToFileName(namespace string) string {
 // toApiPath converts namespace to api path
 func toApiPath(namespace, funcName string) string {
 	// Convert "events/voting" to "api.events.voting.funcName"
-	// Always split on "/" — Convex namespaces use forward slashes on all platforms.
-	parts := strings.Split(namespace, "/")
+	parts := splitNamespace(namespace)
 	return "api." + strings.Join(parts, ".") + "." + funcName
 }

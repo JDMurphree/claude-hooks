@@ -104,13 +104,13 @@ func (g *HooksGenerator) Generate(functions []ConvexFunction) error {
 
 // getTopLevelNamespace extracts the top-level namespace from a full namespace path
 func getTopLevelNamespace(namespace string) string {
-	parts := strings.Split(namespace, "/")
+	parts := splitNamespace(namespace)
 	return parts[0]
 }
 
 // getSubNamespace extracts the sub-namespace from a full namespace path
 func getSubNamespace(namespace string) string {
-	parts := strings.Split(namespace, "/")
+	parts := splitNamespace(namespace)
 	if len(parts) > 1 {
 		return strings.Join(parts[1:], "/")
 	}

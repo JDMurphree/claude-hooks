@@ -25,6 +25,16 @@ func normalizeNamespace(p string) string {
 	return strings.ReplaceAll(filepath.ToSlash(p), `\`, "/")
 }
 
+// splitNamespace splits a normalized namespace into its module parts.
+// Namespaces are always '/'-delimited logical module paths (see
+// normalizeNamespace), never OS paths, so this splits on "/" rather than
+// filepath.Separator — using the host separator would leave the whole
+// namespace as one part on Windows. Always use this instead of splitting a
+// namespace by hand.
+func splitNamespace(namespace string) []string {
+	return strings.Split(namespace, "/")
+}
+
 // Scanner finds TypeScript files in Convex directory
 type Scanner struct {
 	config       *Config

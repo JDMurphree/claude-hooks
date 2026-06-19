@@ -1,0 +1,1 @@
+refactor: centralize convex-gen namespace splitting in splitNamespace helper
